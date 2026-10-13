@@ -1,0 +1,126 @@
+{
+    "name": "fluidstan/fluidstan",
+    "description": "Static analysis for TYPO3 Fluid templates and components, powered by PHPStan",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "fluid",
+        "typo3",
+        "phpstan",
+        "static analysis",
+        "templates"
+    ],
+    "authors": [
+        {
+            "name": "Sascha Egerer",
+            "email": "sascha.egerer@flowd.de",
+            "homepage": "https://flowd.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-ctype": "*",
+        "composer-runtime-api": "^2.2",
+        "nette/neon": "^3.4",
+        "nikic/php-parser": "^5.0",
+        "phpstan/phpstan": "^2.1.30",
+        "psr/container": "^1.0 || ^2.0",
+        "symfony/console": "^7.0",
+        "symfony/process": "^7.0",
+        "typo3fluid/fluid": "^4.4 || ^5.0"
+    },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.54",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "infection/infection": "^0.32 || ^0.35",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "rector/rector": "^2.7",
+        "shipmonk/composer-dependency-analyser": "^1.8"
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "FluidStan\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Shop\\": "docs/example/src/",
+            "FluidStan\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/fluidstan"
+    ],
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true,
+            "infection/extension-installer": true
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        },
+        "phpstan": {
+            "includes": [
+                "extension.neon"
+            ]
+        }
+    },
+    "scripts": {
+        "check": [
+            "@lint",
+            "@test"
+        ],
+        "fix": [
+            "@fix:rector",
+            "@fix:cs",
+            "@composer normalize --no-check-lock"
+        ],
+        "fix:cs": "php-cs-fixer fix",
+        "fix:rector": "rector process",
+        "fluidstan": "fluidstan -c tests/Fixtures/fluidstan.neon",
+        "fluidstan:example": "fluidstan -c docs/example/fluidstan.neon",
+        "lint": [
+            "@lint:syntax",
+            "@lint:composer",
+            "@lint:cs",
+            "@lint:phpstan",
+            "@lint:rector",
+            "@lint:deps"
+        ],
+        "lint:composer": [
+            "@composer validate --strict",
+            "@composer normalize --dry-run --no-check-lock"
+        ],
+        "lint:cs": "php-cs-fixer fix --dry-run --diff",
+        "lint:deps": "composer-dependency-analyser",
+        "lint:phpstan": "phpstan analyse --memory-limit=1G",
+        "lint:rector": "rector process --dry-run",
+        "lint:syntax": "parallel-lint --no-progress --exclude vendor --exclude .cache .",
+        "test": "phpunit",
+        "test:coverage": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --coverage-text --coverage-html .cache/coverage/html --coverage-clover .cache/coverage/clover.xml"
+        ],
+        "test:mutation": [
+            "@putenv XDEBUG_MODE=coverage",
+            "infection --threads=max --min-msi=70 --min-covered-msi=70"
+        ]
+    },
+    "scripts-descriptions": {
+        "check": "Runs all linters and the test suite",
+        "fix": "Applies Rector, php-cs-fixer and composer normalize",
+        "lint": "Runs all linters without changing files",
+        "test": "Runs the PHPUnit test suite",
+        "test:coverage": "Runs the test suite with code coverage",
+        "test:mutation": "Runs mutation testing with Infection"
+    }
+}

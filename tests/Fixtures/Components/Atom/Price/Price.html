@@ -1,0 +1,23 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="item" type="FluidStan\Tests\Fixtures\Model\Item" />
+<f:argument name="label" type="string" optional="{true}" default="Price" />
+<f:argument name="tags" type="string[]" optional="{true}" />
+
+<span class="a-price">
+    {label}: {item.title} costs {item.price}
+    {item.nonexistent}
+    {item.parent.title}
+    {item.money}
+    {item.address.street} {item.address.country}
+    {undefinedVariable}
+    <f:for each="{item.tags}" as="tag" iteration="i">{tag} {i.cycle} {tag.foo}</f:for>
+    <f:for each="{item.title}" as="char">{char}</f:for>
+    <f:for each="{tags}" as="tag">{tag}</f:for>
+    <f:count subject="{item.title}" />
+    <f:count subject="{item.tags}" />
+    <f:if condition="{item.active} && {item.image}">active</f:if>
+    <f:variable name="total" value="{item.price + 1}" />
+    {total}
+    <f:slot />
+</span>
+</html>

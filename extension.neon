@@ -1,0 +1,14 @@
+services:
+    -
+        class: FluidStan\PhpStan\PropertyPathResolver
+    -
+        class: FluidStan\PhpStan\FReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicStaticMethodReturnTypeExtension
+
+rules:
+    - FluidStan\PhpStan\Rules\PropertyAccessRule
+    - FluidStan\PhpStan\Rules\OutputRule
+    - FluidStan\PhpStan\Rules\EachRule
+    - FluidStan\PhpStan\Rules\ArgumentRule
+    - FluidStan\PhpStan\Rules\MathRule

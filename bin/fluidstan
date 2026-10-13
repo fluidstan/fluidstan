@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$autoloadFile = $_composer_autoload_path ?? null;
+if ($autoloadFile === null) {
+    foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../../autoload.php'] as $candidate) {
+        if (is_file($candidate)) {
+            $autoloadFile = $candidate;
+            break;
+        }
+    }
+}
+if ($autoloadFile === null) {
+    fwrite(STDERR, "Composer autoloader not found. Run \"composer install\".\n");
+    exit(1);
+}
+$autoloadFile = (string) realpath($autoloadFile);
+require $autoloadFile;
+
+exit((new FluidStan\Console\Application($autoloadFile))->run());

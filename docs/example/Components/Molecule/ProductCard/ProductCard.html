@@ -1,0 +1,25 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:shop="http://typo3.org/ns/App/Shop/ComponentCollection"
+      data-namespace-typo3-fluid="true">
+<f:argument name="product" type="App\Shop\Product" />
+<f:argument name="related" type="App\Shop\Product[]" optional="{true}" />
+
+<article class="m-product-card">
+    <h2>{product.name}</h2>
+    <p class="m-product-card__category">{product.category.title}</p>
+    <p class="m-product-card__teaser">{product.descripton}</p>
+    <shop:atom.price price="{product.price}" />
+    <shop:atom.price price="{product.name}" label="{product.price.currency}" />
+    <img src="{product.image}" alt="{product.name}" />
+    <ul>
+        <f:for each="{product.tags}" as="tag"><li>{tag.label}</li></f:for>
+    </ul>
+    <f:for each="{product.name}" as="char">{char}</f:for>
+    <f:if condition="{product.available}">{stock} in stock</f:if>
+    <f:for each="{related}" as="item">
+        <shop:atom.price price="{item.price}">
+            <f:fragment name="badge">Related</f:fragment>
+        </shop:atom.price>
+    </f:for>
+</article>
+</html>
