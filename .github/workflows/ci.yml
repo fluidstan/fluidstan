@@ -18,7 +18,7 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer lint
 
   test:
@@ -41,7 +41,7 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: composer require --no-update "typo3fluid/fluid:${{ matrix.fluid }}"
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
         with:
           dependency-versions: ${{ matrix.dependencies }}
       - run: composer test
@@ -55,5 +55,5 @@ jobs:
         with:
           php-version: '8.4'
           coverage: pcov
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer test:mutation
