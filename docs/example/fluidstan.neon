@@ -1,0 +1,8 @@
+parameters:
+    paths:
+        - Components
+    namespaces:
+        shop: App\Shop\ComponentCollection
+    bootstrapFiles:
+        - ../../vendor/autoload.php
+    tmpDir: ../../.cache/fluidstan-example

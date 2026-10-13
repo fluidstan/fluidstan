@@ -1,0 +1,43 @@
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item item
+    @var list<FluidStan\Tests\Fixtures\Model\Item> items
+    @var array<string, int> counts
+    @var string key
+</f:comment>
+<f:layout name="Default" />
+
+<f:section name="Main">
+    <f:if condition="{item.active}">
+        <f:then>{item.title}</f:then>
+        <f:else if="{item.price} > 10">expensive</f:else>
+        <f:else>cheap</f:else>
+    </f:if>
+    <f:if condition="{item.tags} && {item.price} == 5">both</f:if>
+    <f:if condition="{item.active}" then="yes" else="no" />
+    {f:if(condition: item.active, then: 'on', else: 'off')}
+    <f:for each="{items}" as="entry" key="index" iteration="it" reverse="true">
+        {index}: {entry.title} {it.isLast}
+    </f:for>
+    <f:alias map="{first: items.0, total: counts.total}">{first.title} {total}</f:alias>
+    <f:variable name="label" value="{item.title}" />
+    <f:variable name="combined">{item.title} ({item.price})</f:variable>
+    <f:variable name="captured"><f:for each="{items}" as="x">{x.title}</f:for></f:variable>
+    {label} {combined} {captured}
+    <f:cycle values="{items}" as="cycled">{cycled.title}</f:cycle>
+    <f:groupedFor each="{items}" as="group" groupBy="title" groupKey="groupTitle">{groupTitle} <f:count>{group}</f:count></f:groupedFor>
+    {item.active ? item.title : 'untitled'}
+    {item.price + 1} {item.price * counts.total}
+    {item.price as integer} {item.title as string}
+    {counts.{key}} {true} {null}
+    {item.title -> f:format.raw() -> f:format.htmlspecialchars()}
+    <f:spaceless><span>{item.title}</span></f:spaceless>
+    <f:count>{item.tags}</f:count>
+    <f:format.raw>{item.title} and {item.price}</f:format.raw>
+    <f:render section="Sub" arguments="{entry: item, all: _all}" />
+    <f:render partial="Teaser" arguments="{item: item}" optional="true" />
+    <f:format.number decimals="{counts.total}">{item.price}</f:format.number>
+</f:section>
+
+<f:section name="Sub">
+    {entry.title} {undefinedInSection}
+</f:section>

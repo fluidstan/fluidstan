@@ -1,0 +1,18 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": ["src"]
+    },
+    "timeout": 30,
+    "logs": {
+        "text": ".cache/infection/infection.log",
+        "summary": ".cache/infection/summary.log",
+        "html": ".cache/infection/report.html"
+    },
+    "tmpDir": ".cache/infection",
+    "mutators": {
+        "@default": true
+    },
+    "testFramework": "phpunit",
+    "testFrameworkOptions": "--testsuite=unit,integration"
+}

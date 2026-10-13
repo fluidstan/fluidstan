@@ -1,0 +1,18 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" xmlns:fs="http://typo3.org/ns/FluidStan/Tests/Fixtures/Components/ComponentCollection" data-namespace-typo3-fluid="true">
+<f:argument name="item" type="FluidStan\Tests\Fixtures\Model\Item" />
+<f:argument name="items" type="FluidStan\Tests\Fixtures\Model\Item[]" />
+
+<div class="m-card">
+    <fs:atom.price item="{item}">Default slot</fs:atom.price>
+    <fs:atom.price item="{item.title}" label="{item.price}" />
+    <fs:atom.price item="{item}" tags="{items}" />
+    <fs:atom.price item="{item}">
+        <f:fragment name="footer">x</f:fragment>
+    </fs:atom.price>
+    <f:for each="{items}" as="entry">
+        <fs:atom.price item="{entry}" label="{entry.title}" />
+        {entry.price.cents}
+    </f:for>
+    <f:render section="Missing" />
+</div>
+</html>

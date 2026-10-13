@@ -1,0 +1,42 @@
+includes:
+    - phar://phpstan.phar/conf/bleedingEdge.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+        - bin
+        - docs/example/src
+        - rector.php
+        - .php-cs-fixer.dist.php
+    excludePaths:
+        - tests/Fixtures/Components
+        - tests/Fixtures/Templates
+        - tests/Integration/__snapshots__
+    tmpDir: .cache/phpstan
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    reportAnyTypeWideningInVarTag: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    reportPossiblyNonexistentGeneralArrayOffset: true
+    ignoreErrors:
+        # Fluid marks its parser, syntax tree and component internals as @internal; analysing templates is impossible without them
+        -
+            identifiers:
+                - class.extendsInternalClass
+                - classConstant.internalClass
+                - instanceof.internalClass
+                - method.internal
+                - method.internalClass
+                - new.internalClass
+                - parameter.internalClass
+                - parameter.internalInterface
+                - return.internalInterface
+                - property.internalClass
+                - return.internalClass
+            message: '#TYPO3Fluid#'
