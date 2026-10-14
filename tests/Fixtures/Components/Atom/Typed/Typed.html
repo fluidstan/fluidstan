@@ -1,0 +1,11 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="text" type="string" />
+<f:argument name="count" type="int" />
+<f:argument name="ratio" type="float" />
+<f:argument name="flag" type="bool" />
+<f:argument name="anything" type="mixed" />
+<f:argument name="when" type="DateTime" />
+<f:argument name="note" type="string" optional="{true}" />
+
+<span>{text} {count} {ratio} {flag} {anything} {when.timestamp} {note}</span>
+</html>

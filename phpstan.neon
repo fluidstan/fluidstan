@@ -33,6 +33,7 @@ parameters:
                 - instanceof.internalClass
                 - method.internal
                 - method.internalClass
+                - method.internalInterface
                 - new.internalClass
                 - parameter.internalClass
                 - parameter.internalInterface

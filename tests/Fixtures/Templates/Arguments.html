@@ -1,0 +1,9 @@
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item item
+    @var DateTime date
+</f:comment>
+<fs:atom.typed text="{item.title}" count="{item.price}" ratio="1.5" flag="{item.active}" anything="{null}" when="{date}" />
+<fs:atom.typed text="{item.price}" count="12" ratio="{item.title}" flag="yes" anything="{item}" when="{date}" note="{null}" />
+<fs:atom.typed text="{item.money}" count="{item}" ratio="{item.tags}" flag="{item.title}" anything="{date}" when="{true}" />
+<fs:atom.typed text="t" count="1" ratio="1" flag="1" anything="x" when="{date}" nope="1" />
+<fs:atom.typed text="t" />

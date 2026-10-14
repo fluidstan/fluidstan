@@ -78,6 +78,32 @@ final class LocationTrackingTemplateParserTest extends TestCase
         $this->assertArrayNotHasKey('{nope}', $positions);
     }
 
+    public function testAllMissingRequiredArgumentsAreReportedAndParsingContinues(): void
+    {
+        $environment = new FluidEnvironment((new ConfigurationLoader())->fromParameters([], __DIR__));
+        $template = $environment->parseSource("<div>\n<f:for>{x}</f:for>\n</div>", '/test.html');
+
+        $this->assertSame(
+            ['2: Required argument "each" was not supplied.', '2: Required argument "as" was not supplied.'],
+            array_map(static fn(Diagnostic $d): string => $d->line . ': ' . $d->message, $template->parseDiagnostics->all()),
+        );
+        // The tag survived as a ViewHelper node instead of degrading to text
+        $this->assertTrue($template->isParsed());
+        $this->assertCount(3, $template->parsingState?->getRootNode()->getChildNodes() ?? []);
+    }
+
+    public function testUndeclaredComponentArgumentsAreNamed(): void
+    {
+        $root = __DIR__ . '/../Fixtures';
+        $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', $root);
+        $template = (new FluidEnvironment($configuration))->parseSource('<fs:atom.price item="{item}" string="x" nope="y" />', $root . '/test.html');
+
+        $this->assertSame(
+            ['1: Component fs:atom.price has no argument "string", "nope".'],
+            array_map(static fn(Diagnostic $d): string => $d->line . ': ' . $d->message, $template->parseDiagnostics->all()),
+        );
+    }
+
     public function testParseErrorsAreCollectedWithLines(): void
     {
         $environment = new FluidEnvironment((new ConfigurationLoader())->fromParameters([], __DIR__));

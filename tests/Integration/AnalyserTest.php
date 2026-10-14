@@ -41,8 +41,21 @@ final class AnalyserTest extends TestCase
             'Card.html:9 fluid.component.unknownSlot',
             'Card.html:14 fluidstan.property.unresolvable',
             'Card.html:16 fluid.render.unknownSection',
+            // objects and lists passed to scalar or class typed arguments
+            'Arguments.html:7 fluidstan.argument.type',
+            'Arguments.html:7 fluidstan.argument.type',
+            'Arguments.html:7 fluidstan.argument.type',
+            'Arguments.html:7 fluidstan.argument.type',
+            // an undeclared argument, reported without losing the tag
+            'Arguments.html:8 fluid.viewHelper',
+            // every missing required argument, not just the first
+            'Arguments.html:9 fluid.parser',
+            'Arguments.html:9 fluid.parser',
+            'Arguments.html:9 fluid.parser',
+            'Arguments.html:9 fluid.parser',
+            'Arguments.html:9 fluid.parser',
             'Plain.html:2 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(4, $result->templateCount);
+        $this->assertSame(6, $result->templateCount);
     }
 }

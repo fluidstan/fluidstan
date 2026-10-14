@@ -25,6 +25,8 @@ final class TranspilerSnapshotTest extends TestCase
         yield 'component calling components' => ['Components/Molecule/Card/Card.html'];
         yield 'plain template with annotation' => ['Templates/Plain.html'];
         yield 'syntax coverage' => ['Templates/Syntax.html'];
+        yield 'argument coercion and validation' => ['Templates/Arguments.html'];
+        yield 'component with scalar arguments' => ['Components/Atom/Typed/Typed.html'];
     }
 
     #[DataProvider('templates')]
@@ -34,7 +36,6 @@ final class TranspilerSnapshotTest extends TestCase
         $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', $root);
         $parsed = (new FluidEnvironment($configuration))->parseFile($root . '/' . $template);
         $this->assertTrue($parsed->isParsed());
-        $this->assertCount(0, $parsed->parseDiagnostics);
 
         $generated = (new TemplateTranspiler())->transpile($parsed);
         // The header carries the absolute template path and the function name hashes it; keep
