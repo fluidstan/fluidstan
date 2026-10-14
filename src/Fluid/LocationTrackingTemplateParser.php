@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace FluidStan\Fluid;
 
+use TYPO3Fluid\Fluid\Core\Parser\Exception as ParserException;
 use TYPO3Fluid\Fluid\Core\Parser\InterceptorInterface;
 use TYPO3Fluid\Fluid\Core\Parser\ParsingState;
+use TYPO3Fluid\Fluid\Core\Parser\Patterns;
+use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\BooleanNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\Expression\ExpressionNodeInterface;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\NodeInterface;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ObjectAccessorNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\TextNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ViewHelperNode;
 use TYPO3Fluid\Fluid\Core\Parser\TemplateParser;
+use TYPO3Fluid\Fluid\Core\ViewHelper\ArgumentDefinition;
+use TYPO3Fluid\Fluid\Core\ViewHelper\Exception as ViewHelperException;
 
 /**
  * Fluid's syntax tree nodes carry no source positions. This parser records one per node
@@ -89,6 +94,71 @@ final class LocationTrackingTemplateParser extends TemplateParser
     {
         $this->synchronizeChunk();
         return new SourceLocation($this->templateIdentifier, $this->currentChunkLine, 1);
+    }
+
+    /**
+     * Fluid aborts a ViewHelper tag on the first missing required argument, which hides the other
+     * missing arguments, turns the tag into text and causes follow-up errors for everything nested in
+     * it. For analysis every missing argument is reported and parsing continues with the tag intact.
+     *
+     * @param array<mixed> $expectedArguments
+     * @param array<mixed> $actualArguments
+     */
+    protected function abortIfRequiredArgumentsAreMissing(array $expectedArguments, array $actualArguments): void
+    {
+        foreach ($expectedArguments as $name => $expectedArgument) {
+            if ($expectedArgument instanceof ArgumentDefinition && $expectedArgument->isRequired() && !\array_key_exists($name, $actualArguments)) {
+                $this->renderingContext->getErrorHandler()->handleParserError(
+                    new ParserException('Required argument "' . $name . '" was not supplied.', 1237823699),
+                );
+            }
+        }
+    }
+
+    /**
+     * Mirrors TemplateParser::parseArguments() with one difference: an undeclared argument is reported
+     * through the error handler instead of thrown, so the tag stays intact and everything nested in it
+     * is still analysed. The undeclared arguments are dropped from the result.
+     *
+     * @return array<string, mixed>
+     */
+    protected function parseArguments(ParsingState $state, string $argumentsString, ViewHelperNode $viewHelperNode): array
+    {
+        $argumentDefinitions = $viewHelperNode->getArgumentDefinitions();
+        $argumentsObjectTree = [];
+        $undeclaredArguments = [];
+        $matches = [];
+        if (preg_match_all(Patterns::$SPLIT_PATTERN_TAGARGUMENTS, $argumentsString, $matches, PREG_SET_ORDER) > 0) {
+            foreach ($matches as $singleMatch) {
+                $argument = $singleMatch['Argument'] ?? '';
+                $value = $this->unquoteString($singleMatch['ValueQuoted'] ?? '');
+                $escapingEnabledBackup = $this->escapingEnabled;
+                if (isset($argumentDefinitions[$argument])) {
+                    $argumentDefinition = $argumentDefinitions[$argument];
+                    $this->escapingEnabled = $this->escapingEnabled && $this->isArgumentEscaped($viewHelperNode->getUninitializedViewHelper(), $argumentDefinition);
+                    $argumentsObjectTree[$argument] = $this->buildArgumentObjectTree($state, $value);
+                    if ($argumentDefinition->isBooleanType()) {
+                        $argumentsObjectTree[$argument] = new BooleanNode($argumentsObjectTree[$argument]);
+                    }
+                } else {
+                    $this->escapingEnabled = false;
+                    $undeclaredArguments[$argument] = $this->buildArgumentObjectTree($state, $value);
+                }
+
+                $this->escapingEnabled = $escapingEnabledBackup;
+            }
+        }
+
+        $this->abortIfRequiredArgumentsAreMissing($argumentDefinitions, $argumentsObjectTree);
+        try {
+            $viewHelperNode->getUninitializedViewHelper()->validateAdditionalArguments($undeclaredArguments);
+        } catch (ViewHelperException $viewHelperException) {
+            $this->renderingContext->getErrorHandler()->handleViewHelperError($viewHelperException);
+
+            return $argumentsObjectTree;
+        }
+
+        return $argumentsObjectTree + $undeclaredArguments;
     }
 
     protected function callInterceptor(NodeInterface &$node, int $interceptionPoint, ParsingState $state): void

@@ -77,10 +77,17 @@ final readonly class CollectingErrorHandler implements ErrorHandlerInterface
     public static function cleanMessage(\Throwable $error): string
     {
         $previous = $error->getPrevious();
-        if ($previous instanceof \Throwable && str_starts_with($error->getMessage(), 'Fluid parse error in template')) {
-            return $previous->getMessage();
+        $message = $previous instanceof \Throwable && str_starts_with($error->getMessage(), 'Fluid parse error in template')
+            ? $previous->getMessage()
+            : $error->getMessage();
+
+        // ComponentAdapter lists the names of undeclared arguments after a colon, which reads like a type
+        if (preg_match('/^Invalid arguments supplied to component <([^>]+)>: (.+)$/', $message, $matches) === 1) {
+            $names = array_map(static fn(string $name): string => '"' . trim($name) . '"', explode(',', $matches[2]));
+
+            return \sprintf('Component %s has no argument %s.', $matches[1], implode(', ', $names));
         }
 
-        return $error->getMessage();
+        return $message;
     }
 }
