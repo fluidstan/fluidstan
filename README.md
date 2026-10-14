@@ -37,7 +37,11 @@ It reports:
 - values that cannot be rendered (`{item.money}` where `Money` has no `__toString()`, arrays)
 - `f:for` over something that is not iterable
 - ViewHelper and component arguments whose type does not satisfy the argument definition, with the
-  same rules Fluid's `StrictArgumentProcessor` applies at runtime
+  same rules Fluid's `StrictArgumentProcessor` applies at runtime. Note that Fluid casts scalars
+  before validating: a string passed to an `int` argument, or a float to a `string`, is accepted at
+  runtime and therefore not reported; objects, arrays and `null` for required arguments are. See
+  [`StrictArgumentProcessor::process()`](https://github.com/TYPO3/Fluid/blob/main/src/Core/ViewHelper/StrictArgumentProcessor.php)
+  and its use in [`ViewHelperInvoker`](https://github.com/TYPO3/Fluid/blob/main/src/Core/ViewHelper/ViewHelperInvoker.php).
 - non-numeric operands in `{a + b}`
 - undefined variables in components (their scope is closed)
 - unknown ViewHelpers, unknown or missing arguments, syntax errors (Fluid's parser), unknown component
@@ -50,6 +54,17 @@ Requires PHP 8.2+, Fluid 4.4 or 5.x, PHPStan 2. Argument checks always follow Fl
 validation; on Fluid 4, whose runtime is lenient, they report what would fail after an upgrade.
 
 > Status: early. The pipeline is complete, the rule set is small and the design is settled; see "How it works" and "Roadmap".
+
+## Roadmap
+
+- Layouts, partials and sections analysed with the types of their call sites (sections are currently
+  analysed with `mixed` variables)
+- Type inference from `assign()` / `assignMultiple()` calls in PHP code
+- Narrowing through `f:if` conditions
+- Opt-in strict mode for argument types that reports what Fluid silently casts, such as a
+  non-numeric string passed to an `int` argument
+- Baseline file, result cache, more output formats
+- Upstream proposal: positions on Fluid syntax tree nodes
 
 ## Installation
 
@@ -147,20 +162,12 @@ the transpiler. When Fluid changes one of these, FluidStan must follow:
 | Casting of output and of multiple children | `AbstractNode::evaluateChildNodes()` / `castToString()` |
 | Ternary, math and casting expression syntax | `TernaryExpressionNode`, `MathExpressionNode`, `CastingExpressionNode` |
 | Fragment to slot mapping | `ComponentAdapter` (private helpers) |
+| Argument parsing with non-fatal validation | `TemplateParser::parseArguments()` and `abortIfRequiredArgumentsAreMissing()` |
 | Iteration variable keys | `ForViewHelper` |
 
 Candidates for upstream contributions that would remove mirrored code: source positions on syntax
 tree nodes, a public fragment extraction on `ComponentAdapter`, and a reusable type grammar helper
 for argument definitions.
-
-## Roadmap
-
-- Layouts, partials and sections analysed with the types of their call sites (sections are currently
-  analysed with `mixed` variables)
-- Type inference from `assign()` / `assignMultiple()` calls in PHP code
-- Narrowing through `f:if` conditions
-- Baseline file, result cache, more output formats
-- Upstream proposal: positions on Fluid syntax tree nodes
 
 ## Development
 

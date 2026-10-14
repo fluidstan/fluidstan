@@ -86,8 +86,8 @@
         ],
         "fix:cs": "php-cs-fixer fix",
         "fix:rector": "rector process",
-        "fluidstan": "fluidstan -c tests/Fixtures/fluidstan.neon",
-        "fluidstan:example": "fluidstan -c docs/example/fluidstan.neon",
+        "fluidstan": "@php bin/fluidstan -c tests/Fixtures/fluidstan.neon",
+        "fluidstan:example": "@php bin/fluidstan -c docs/example/fluidstan.neon",
         "lint": [
             "@lint:syntax",
             "@lint:composer",
