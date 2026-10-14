@@ -104,6 +104,19 @@ final class LocationTrackingTemplateParserTest extends TestCase
         );
     }
 
+    public function testFatalParseErrorsAreUnwrapped(): void
+    {
+        // A stray closing tag aborts parsing; Fluid wraps the error with location and source chunk
+        $environment = new FluidEnvironment((new ConfigurationLoader())->fromParameters([], __DIR__));
+        $template = $environment->parseSource("<div>\n</f:if>\n</div>", '/test.html');
+
+        $this->assertFalse($template->isParsed());
+        $this->assertSame(
+            ['2: You closed a templating tag which you never opened!'],
+            array_map(static fn(Diagnostic $d): string => $d->line . ': ' . $d->message, $template->parseDiagnostics->all()),
+        );
+    }
+
     public function testParseErrorsAreCollectedWithLines(): void
     {
         $environment = new FluidEnvironment((new ConfigurationLoader())->fromParameters([], __DIR__));
