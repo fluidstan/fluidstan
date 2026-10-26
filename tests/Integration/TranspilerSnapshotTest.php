@@ -28,6 +28,7 @@ final class TranspilerSnapshotTest extends TestCase
         yield 'argument coercion and validation' => ['Templates/Arguments.html'];
         yield 'component with scalar arguments' => ['Components/Atom/Typed/Typed.html'];
         yield 'component with additional variables' => ['Components/Atom/Meta/Meta.html'];
+        yield 'component without arguments' => ['Components/Atom/Logo/Logo.html'];
         yield 'component with declared additional variable shape' => ['Documented/Atom/Note/Note.html'];
     }
 

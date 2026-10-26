@@ -29,12 +29,18 @@ final class AnalyserTest extends TestCase
             $result->diagnostics->all(),
         );
         $this->assertSame([
+            // a component without arguments still has its collection's variables
+            'Logo.html:2 fluidstan.property.unresolvable',
+            'Logo.html:2 variable.undefined',
             // variables from getAdditionalVariables(), typed after the method's return statements
             'Meta.html:6 fluidstan.property.unresolvable',
             'Meta.html:7 fluidstan.property.unresolvable',
             'Meta.html:8 fluidstan.property.unresolvable',
             'Meta.html:10 fluidstan.for.notIterable',
             'Meta.html:12 variable.undefined',
+            // f:variable reassigned from the collection's value: int|float afterwards
+            'Meta.html:15 fluidstan.property.unresolvable',
+            'Meta.html:15 fluidstan.property.unresolvable',
             'Price.html:8 fluidstan.property.unresolvable',
             'Price.html:10 fluidstan.output.object',
             'Price.html:11 fluidstan.property.unresolvable',
@@ -66,6 +72,6 @@ final class AnalyserTest extends TestCase
             'Arguments.html:9 fluid.parser',
             'Plain.html:2 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(8, $result->templateCount);
+        $this->assertSame(9, $result->templateCount);
     }
 }

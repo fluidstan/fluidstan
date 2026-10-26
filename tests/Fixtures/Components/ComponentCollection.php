@@ -31,6 +31,7 @@ final class ComponentCollection extends AbstractComponentCollection
             'version' => 1,
             'author' => new Item('Author', 0),
             'nothing' => null,
+            'this' => 'a Fluid name that is not a PHP name',
         ];
     }
 }

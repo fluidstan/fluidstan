@@ -41,4 +41,17 @@ function fluidstan_template_HASH($title): void
     }
     // fluid:12
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'undeclared'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'this'));
+    // fluid:14
+    $version = \FluidStan\Runtime\F::math(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'version'), 1);
+    // fluid:15
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($version, 'digits'));
+    // fluid:16
+    $__section_Extra = function (): void {
+        // fluid:16
+        $component = \FluidStan\Runtime\F::variable('component');
+        // fluid:16
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($component, 'class'));
+    };
 }

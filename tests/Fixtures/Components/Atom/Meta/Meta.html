@@ -10,5 +10,9 @@
     <f:for each="{version}" as="digit">{digit}</f:for>
     <f:if condition="{nothing}">never</f:if>
     {undeclared}
+    {this}
+    <f:variable name="version" value="{version + 1}" />
+    {version.digits}
+    <f:section name="Extra">{component.class}</f:section>
 </div>
 </html>

@@ -27,10 +27,11 @@ final readonly class ParsedTemplate
     }
 
     /**
-     * A component template declares its arguments with f:argument; its scope is closed.
+     * A component template belongs to a collection or declares arguments with f:argument; its scope is closed.
      */
     public function isComponent(): bool
     {
-        return $this->parsingState instanceof ParsingState && $this->parsingState->getArgumentDefinitions() !== [];
+        return $this->component instanceof ComponentTemplate
+            || ($this->parsingState instanceof ParsingState && $this->parsingState->getArgumentDefinitions() !== []);
     }
 }
