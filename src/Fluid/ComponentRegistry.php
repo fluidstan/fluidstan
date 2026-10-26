@@ -7,6 +7,7 @@ namespace FluidStan\Fluid;
 use TYPO3Fluid\Fluid\Core\Component\ComponentListProviderInterface;
 use TYPO3Fluid\Fluid\Core\Component\ComponentTemplateResolverInterface;
 use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolver;
+use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolverDelegateInterface;
 
 /**
  * Maps component template files back to the collection and ViewHelper name they are rendered as.
@@ -28,12 +29,19 @@ final class ComponentRegistry
 
     /**
      * @param array<string, list<string>> $namespaces identifier => PHP namespaces or collection classes, as configured
+     * @param array<string, ViewHelperResolverDelegateInterface> $delegates delegates the framework built, keyed by namespace string
      */
-    public static function fromNamespaces(array $namespaces, ViewHelperResolver $resolver): self
+    public static function fromNamespaces(array $namespaces, array $delegates, ViewHelperResolver $resolver): self
     {
         $collections = [];
+        foreach ($delegates as $delegate) {
+            if ($delegate instanceof ComponentTemplateResolverInterface) {
+                $collections[] = $delegate;
+            }
+        }
+
         foreach (array_merge(...array_values($namespaces)) as $class) {
-            if (!class_exists($class) || !is_a($class, ComponentTemplateResolverInterface::class, true)) {
+            if (isset($delegates[$class]) || !class_exists($class) || !is_a($class, ComponentTemplateResolverInterface::class, true)) {
                 continue;
             }
 
