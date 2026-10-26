@@ -20,9 +20,10 @@ interface EnvironmentInterface
 
     /**
      * Fluid namespaces, merged over the configured ones: identifier => PHP namespaces or
-     * ViewHelperResolverDelegate classes (e.g. component collections).
+     * ViewHelperResolverDelegate classes (e.g. component collections). A null entry is an ignored
+     * namespace: Fluid leaves its tags untouched instead of resolving them.
      *
-     * @return array<string, list<string>>
+     * @return array<string, list<string>|null>
      */
     public function getNamespaces(): array;
 

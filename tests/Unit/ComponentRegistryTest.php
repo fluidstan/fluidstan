@@ -19,7 +19,7 @@ final class ComponentRegistryTest extends TestCase
     public function testFindsComponentsOfConfiguredCollections(): void
     {
         $registry = ComponentRegistry::fromNamespaces(
-            ['f' => ['TYPO3Fluid\\Fluid\\ViewHelpers'], 'fs' => ['FluidStan\\Tests\\Does\\Not\\Exist', ComponentCollection::class]],
+            ['f' => ['TYPO3Fluid\\Fluid\\ViewHelpers'], 'fs' => ['FluidStan\\Tests\\Does\\Not\\Exist', ComponentCollection::class], 'ignored' => null],
             [],
             new AnalysisViewHelperResolver(),
         );

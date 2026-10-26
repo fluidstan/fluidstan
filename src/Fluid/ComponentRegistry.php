@@ -28,7 +28,7 @@ final class ComponentRegistry
     }
 
     /**
-     * @param array<string, list<string>> $namespaces identifier => PHP namespaces or collection classes, as configured
+     * @param array<string, list<string>|null> $namespaces identifier => PHP namespaces or collection classes, null for ignored namespaces
      * @param array<string, ViewHelperResolverDelegateInterface> $delegates delegates the framework built, keyed by namespace string
      */
     public static function fromNamespaces(array $namespaces, array $delegates, ViewHelperResolver $resolver): self
@@ -40,8 +40,12 @@ final class ComponentRegistry
             }
         }
 
-        foreach (array_merge(...array_values($namespaces)) as $class) {
-            if (isset($delegates[$class]) || !class_exists($class) || !is_a($class, ComponentTemplateResolverInterface::class, true)) {
+        foreach (array_merge(...array_values(array_filter($namespaces, static fn(?array $entries): bool => $entries !== null))) as $class) {
+            if (isset($delegates[$class])) {
+                continue;
+            }
+
+            if (!is_a($class, ComponentTemplateResolverInterface::class, true)) {
                 continue;
             }
 

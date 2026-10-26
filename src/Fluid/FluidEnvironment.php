@@ -20,7 +20,7 @@ final class FluidEnvironment
 
     private ?EnvironmentInterface $environment = null;
 
-    /** @var array<string, list<string>> */
+    /** @var array<string, list<string>|null> */
     private array $namespaces;
 
     /** @var array<string, ViewHelperResolverDelegateInterface> */
@@ -33,7 +33,7 @@ final class FluidEnvironment
         $this->namespaces = $configuration->namespaces;
     }
 
-    public function bootstrap(): void
+    private function bootstrap(): void
     {
         if ($this->bootstrapped) {
             return;
