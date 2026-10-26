@@ -29,6 +29,7 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 {
     public function __construct(
         private PropertyPathResolver $resolver,
+        private AdditionalVariablesResolver $additionalVariables,
         private ReflectionProvider $reflectionProvider,
     ) {}
 
@@ -39,7 +40,7 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
     public function isStaticMethodSupported(MethodReflection $methodReflection): bool
     {
-        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg'], true);
+        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg', 'additionalVariable'], true);
     }
 
     public function getTypeFromStaticMethodCall(MethodReflection $methodReflection, StaticCall $methodCall, Scope $scope): ?Type
@@ -109,6 +110,20 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
             case 'arg':
                 return $argType(1);
+
+            case 'additionalVariable':
+                $collections = $argType(0)->getConstantStrings();
+                $names = $argType(2)->getConstantStrings();
+                if (\count($collections) !== 1 || \count($names) !== 1) {
+                    return new MixedType();
+                }
+
+                $variables = $this->additionalVariables->resolve($collections[0]->getValue());
+                if (!$variables instanceof Type || !$variables->isArray()->yes() || $variables->hasOffsetValueType($names[0])->no()) {
+                    return new MixedType();
+                }
+
+                return $variables->getOffsetValueType($names[0]);
         }
 
         return null;

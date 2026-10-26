@@ -27,7 +27,7 @@ function fluidstan_template_HASH($item, $label = 'Price', $tags = null): void
     // fluid:11
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::get($item, 'address'), 'country'));
     // fluid:12
-    \FluidStan\Runtime\F::output($undefinedVariable);
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.price', 'undefinedVariable'));
     // fluid:13
     foreach (\FluidStan\Runtime\F::each(\FluidStan\Runtime\F::get($item, 'tags')) as $tag) {
         // fluid:13

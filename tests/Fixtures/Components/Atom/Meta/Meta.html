@@ -1,0 +1,14 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="title" type="string" />
+
+<div class="{component.class}" data-prefix="{component.prefix}">
+    {component.langPrefix}{title} v{version}
+    {component.nonexistent}
+    {component.class.length}
+    {author.title} {author.nonexistent}
+    <f:for each="{component.flags}" as="flag">{flag}</f:for>
+    <f:for each="{version}" as="digit">{digit}</f:for>
+    <f:if condition="{nothing}">never</f:if>
+    {undeclared}
+</div>
+</html>

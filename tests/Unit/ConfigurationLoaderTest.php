@@ -7,6 +7,7 @@ namespace FluidStan\Tests\Unit;
 use FluidStan\Configuration\ConfigurationException;
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Tests\Fixtures\Components\ComponentCollection;
+use FluidStan\Tests\Fixtures\Documented\DocumentedCollection;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigurationLoaderTest extends TestCase
@@ -58,8 +59,8 @@ final class ConfigurationLoaderTest extends TestCase
         $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', '/elsewhere');
 
         $this->assertSame($root, $configuration->rootDir);
-        $this->assertSame([$root . '/Components', $root . '/Templates'], $configuration->paths);
-        $this->assertSame(['fs' => [ComponentCollection::class]], array_diff_key($configuration->namespaces, ['f' => true]));
+        $this->assertSame([$root . '/Components', $root . '/Documented', $root . '/Templates'], $configuration->paths);
+        $this->assertSame(['fs' => [ComponentCollection::class], 'fd' => [DocumentedCollection::class]], array_diff_key($configuration->namespaces, ['f' => true]));
     }
 
     public function testMissingConfigFileIsAnError(): void

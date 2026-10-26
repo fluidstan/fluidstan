@@ -29,6 +29,12 @@ final class AnalyserTest extends TestCase
             $result->diagnostics->all(),
         );
         $this->assertSame([
+            // variables from getAdditionalVariables(), typed after the method's return statements
+            'Meta.html:6 fluidstan.property.unresolvable',
+            'Meta.html:7 fluidstan.property.unresolvable',
+            'Meta.html:8 fluidstan.property.unresolvable',
+            'Meta.html:10 fluidstan.for.notIterable',
+            'Meta.html:12 variable.undefined',
             'Price.html:8 fluidstan.property.unresolvable',
             'Price.html:10 fluidstan.output.object',
             'Price.html:11 fluidstan.property.unresolvable',
@@ -41,6 +47,10 @@ final class AnalyserTest extends TestCase
             'Card.html:9 fluid.component.unknownSlot',
             'Card.html:14 fluidstan.property.unresolvable',
             'Card.html:16 fluid.render.unknownSection',
+            // the declared @return shape wins over what the method body returns
+            'Note.html:4 fluidstan.property.unresolvable',
+            'Note.html:4 fluidstan.property.unresolvable',
+            'Note.html:4 variable.undefined',
             // objects and lists passed to scalar or class typed arguments
             'Arguments.html:7 fluidstan.argument.type',
             'Arguments.html:7 fluidstan.argument.type',
@@ -56,6 +66,6 @@ final class AnalyserTest extends TestCase
             'Arguments.html:9 fluid.parser',
             'Plain.html:2 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(6, $result->templateCount);
+        $this->assertSame(8, $result->templateCount);
     }
 }

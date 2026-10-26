@@ -39,6 +39,15 @@ final class F
     }
 
     /**
+     * A variable of a component that is not an argument: the collection may provide it through
+     * getAdditionalVariables(), whose return type the PHPStan extension resolves.
+     */
+    public static function additionalVariable(string $collection, string $component, string $name): mixed
+    {
+        return null;
+    }
+
+    /**
      * `{_all}`
      *
      * @return array<string, mixed>

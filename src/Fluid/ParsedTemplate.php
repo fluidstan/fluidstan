@@ -17,6 +17,8 @@ final readonly class ParsedTemplate
         public NodeLocations $locations,
         public DiagnosticCollection $parseDiagnostics,
         public RenderingContextInterface $renderingContext,
+        /** The component this template is rendered as, when it belongs to a configured collection */
+        public ?ComponentTemplate $component = null,
     ) {}
 
     public function isParsed(): bool
