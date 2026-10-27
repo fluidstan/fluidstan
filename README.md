@@ -153,9 +153,9 @@ What does **not** narrow, on purpose:
 - the loose comparisons `==` and `!=`, even against a literal: `{label} == 'abc'` leaves `label` as
   `string|null`. Fluid applies the PHP operator, and PHPStan is deliberately cautious with loose
   comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP
-- comparisons of a value that may be a `Countable` or `UnsafeHTML` with anything but an object: Fluid
-  compares a bool or a string in their place, so an empty `ObjectStorage` does equal `0` there, and
-  PHPStan's reasoning about the object would be wrong
+- comparisons involving a value that may be a `Countable` or `UnsafeHTML`: Fluid compares a bool or
+  a string in their place, so an empty `ObjectStorage` does equal `0` there, and PHPStan's reasoning
+  about the object would be wrong
 
 Conditions are not re-implemented: the PHP code Fluid's own `BooleanParser` compiles for them is
 reused with the operands substituted, so grammar, precedence and comparison semantics are Fluid's.

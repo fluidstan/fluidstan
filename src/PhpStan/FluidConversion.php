@@ -54,14 +54,13 @@ final class FluidConversion
     }
 
     /**
-     * Whether the conversion can change the outcome of a comparison of the operand with the other
-     * side: a possible Countable against anything a bool compares to, a possible UnsafeHTML against
-     * anything a string compares to. Only another object is safe.
+     * Whether the conversion can change the outcome of a comparison with the operand: a possible
+     * Countable is compared as a bool, a possible UnsafeHTML as a string, whatever the other side is
+     * (two Countables compare their bools).
      */
-    public static function affectsComparison(Type $operand, Type $other): bool
+    public static function affectsComparison(Type $operand): bool
     {
-        $maybeCountable = !(new ObjectType(\Countable::class))->isSuperTypeOf($operand)->no();
-        $maybeUnsafeHtml = !(new ObjectType(self::UNSAFE_HTML))->isSuperTypeOf($operand)->no();
-        return ($maybeCountable || $maybeUnsafeHtml) && !$other->isObject()->yes();
+        return !(new ObjectType(\Countable::class))->isSuperTypeOf($operand)->no()
+            || !(new ObjectType(self::UNSAFE_HTML))->isSuperTypeOf($operand)->no();
     }
 }

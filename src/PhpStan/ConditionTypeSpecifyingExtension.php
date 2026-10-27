@@ -84,9 +84,7 @@ final class ConditionTypeSpecifyingExtension implements StaticMethodTypeSpecifyi
             return new SpecifiedTypes();
         }
 
-        $leftType = $scope->getType($left);
-        $rightType = $scope->getType($right);
-        if (FluidConversion::affectsComparison($leftType, $rightType) || FluidConversion::affectsComparison($rightType, $leftType)) {
+        if (FluidConversion::affectsComparison($scope->getType($left)) || FluidConversion::affectsComparison($scope->getType($right))) {
             return new SpecifiedTypes();
         }
 
