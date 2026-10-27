@@ -33,7 +33,7 @@ final class FluidEnvironment
         $this->namespaces = $configuration->namespaces;
     }
 
-    private function bootstrap(): void
+    public function bootstrap(): void
     {
         if ($this->bootstrapped) {
             return;
