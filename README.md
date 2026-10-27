@@ -78,7 +78,7 @@ composer require --dev fluidstan/typo3
 
 ```bash
 vendor/bin/fluidstan                          # uses ./fluidstan.neon
-vendor/bin/fluidstan path/to/Components -l 6  # explicit paths, PHPStan level
+vendor/bin/fluidstan path/to/Components       # explicit paths
 vendor/bin/fluidstan --error-format=json
 vendor/bin/fluidstan --debug                  # prints the directory of the generated PHP code
 ```
@@ -98,10 +98,12 @@ parameters:
         - vendor/autoload.php
     tmpDir: var/cache/fluidstan
     phpstan:
-        level: 8
         includes: []           # extra PHPStan config files for the generated code
         parameters: {}         # extra PHPStan parameters
 ```
+
+PHPStan's rule level is not configurable: FluidStan's checks implement Fluid's semantics and run
+regardless of the level, and the generated code contains none of the constructs the levels add checks for.
 
 TYPO3 projects use the adapter, which boots TYPO3 without a database, registers the namespaces from
 `$GLOBALS['TYPO3_CONF_VARS']['SYS']['fluid']['namespaces']` and resolves `EXT:` paths:

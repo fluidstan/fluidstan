@@ -55,6 +55,10 @@ final class ConfigurationLoader
             throw new ConfigurationException('"phpstan" must be a map.');
         }
 
+        if (\array_key_exists('level', $phpstan)) {
+            throw new ConfigurationException('"phpstan.level" is not supported: FluidStan\'s checks implement Fluid\'s semantics and do not depend on PHPStan\'s rule level.');
+        }
+
         $binary = $phpstan['binary'] ?? null;
         $tmpDir = $parameters['tmpDir'] ?? '.cache/fluidstan';
         $environment = $parameters['environment'] ?? null;
@@ -68,7 +72,6 @@ final class ConfigurationLoader
             suffixes: $this->stringList($parameters['suffixes'] ?? ['.html'], 'suffixes'),
             namespaces: $namespaces,
             bootstrapFiles: $this->resolvePaths($this->stringList($parameters['bootstrapFiles'] ?? [], 'bootstrapFiles'), $rootDir),
-            level: is_numeric($phpstan['level'] ?? null) ? (int) $phpstan['level'] : 8,
             phpstanBinary: \is_string($binary) ? $this->resolvePath($binary, $rootDir) : null,
             phpstanIncludes: $this->resolvePaths($this->stringList($phpstan['includes'] ?? [], 'phpstan.includes'), $rootDir),
             phpstanParameters: $this->stringMap($phpstan['parameters'] ?? [], 'phpstan.parameters'),

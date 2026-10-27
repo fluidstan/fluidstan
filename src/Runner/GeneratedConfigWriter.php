@@ -23,7 +23,9 @@ final class GeneratedConfigWriter
         }
 
         $parameters = array_merge([
-            'level' => $configuration->level,
+            // FluidStan's rules implement Fluid's semantics and run at any level; the generated code
+            // deliberately contains none of the PHP constructs the levels add checks for
+            'level' => 8,
             'paths' => [$generatedDir],
             'tmpDir' => $configuration->tmpDir . '/phpstan',
             'bootstrapFiles' => $bootstrapFiles,
