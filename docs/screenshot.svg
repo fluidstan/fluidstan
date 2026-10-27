@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="906" height="657" viewBox="0 0 906 657" font-family="JetBrains Mono, Fira Code, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="906" height="676" viewBox="0 0 906 676" font-family="JetBrains Mono, Fira Code, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5">
 <style>text{white-space:pre}</style>
-<rect width="906" height="657" rx="10" fill="#1a1b26"/>
+<rect width="906" height="676" rx="10" fill="#1a1b26"/>
 <rect width="906" height="36" rx="10" fill="#24283b"/><rect y="26" width="906" height="10" fill="#24283b"/>
 <circle cx="20" cy="18" r="6" fill="#ff5f57"/><circle cx="40" cy="18" r="6" fill="#febc2e"/><circle cx="60" cy="18" r="6" fill="#28c840"/>
 <text x="453.0" y="22" text-anchor="middle" fill="#a9b1d6" font-size="12">fluidstan — docs/example</text>
@@ -38,20 +38,21 @@
 <text x="88.4" y="408" fill="#6b7089" xml:space="preserve">    fluidstan.for.notIterable</text>
 <text x="308.8" y="408" fill="#3b4261" xml:space="preserve">                                                                           |</text>
 <text x="20.0" y="427" fill="#3b4261" xml:space="preserve">+------+---------------------------------------------------------------------------------------------------------+</text>
-<text x="20.0" y="446" fill="#c0caf5" xml:space="preserve">| 18   | Variable &quot;stock&quot; is not defined.                                                                        |</text>
-<text x="20.0" y="465" fill="#c0caf5" xml:space="preserve">|      | </text>
-<text x="88.4" y="465" fill="#6b7089" xml:space="preserve">    variable.undefined</text>
-<text x="255.6" y="465" fill="#3b4261" xml:space="preserve">                                                                                  |</text>
-<text x="20.0" y="484" fill="#3b4261" xml:space="preserve">+------+---------------------------------------------------------------------------------------------------------+</text>
-<text x="20.0" y="503" fill="#c0caf5" xml:space="preserve">| 20   | Component shop:atom.price has no slot &quot;badge&quot;.                                                          |</text>
-<text x="20.0" y="522" fill="#c0caf5" xml:space="preserve">|      | </text>
-<text x="88.4" y="522" fill="#6b7089" xml:space="preserve">    fluid.component.unknownSlot</text>
-<text x="324.0" y="522" fill="#3b4261" xml:space="preserve">                                                                         |</text>
-<text x="20.0" y="541" fill="#3b4261" xml:space="preserve">+------+---------------------------------------------------------------------------------------------------------+</text>
-<rect x="20.0" y="584" width="608.0" height="19" fill="#f7768e"/>
-<text x="20.0" y="598" fill="#ffffff" xml:space="preserve">                                                                                </text>
+<text x="20.0" y="446" fill="#c0caf5" xml:space="preserve">| 18   | Variable &quot;stock&quot; is not defined: it is neither an argument nor provided by                              |</text>
+<text x="20.0" y="465" fill="#c0caf5" xml:space="preserve">|      | App\Shop\ComponentCollection::getAdditionalVariables().                                                 |</text>
+<text x="20.0" y="484" fill="#c0caf5" xml:space="preserve">|      | </text>
+<text x="88.4" y="484" fill="#6b7089" xml:space="preserve">    variable.undefined</text>
+<text x="255.6" y="484" fill="#3b4261" xml:space="preserve">                                                                                  |</text>
+<text x="20.0" y="503" fill="#3b4261" xml:space="preserve">+------+---------------------------------------------------------------------------------------------------------+</text>
+<text x="20.0" y="522" fill="#c0caf5" xml:space="preserve">| 20   | Component shop:atom.price has no slot &quot;badge&quot;.                                                          |</text>
+<text x="20.0" y="541" fill="#c0caf5" xml:space="preserve">|      | </text>
+<text x="88.4" y="541" fill="#6b7089" xml:space="preserve">    fluid.component.unknownSlot</text>
+<text x="324.0" y="541" fill="#3b4261" xml:space="preserve">                                                                         |</text>
+<text x="20.0" y="560" fill="#3b4261" xml:space="preserve">+------+---------------------------------------------------------------------------------------------------------+</text>
 <rect x="20.0" y="603" width="608.0" height="19" fill="#f7768e"/>
-<text x="20.0" y="617" fill="#ffffff" xml:space="preserve"> [ERROR] Found 7 errors in 1 of 2 templates                                     </text>
+<text x="20.0" y="617" fill="#ffffff" xml:space="preserve">                                                                                </text>
 <rect x="20.0" y="622" width="608.0" height="19" fill="#f7768e"/>
-<text x="20.0" y="636" fill="#ffffff" xml:space="preserve">                                                                                </text>
+<text x="20.0" y="636" fill="#ffffff" xml:space="preserve"> [ERROR] Found 7 errors in 1 of 2 templates                                     </text>
+<rect x="20.0" y="641" width="608.0" height="19" fill="#f7768e"/>
+<text x="20.0" y="655" fill="#ffffff" xml:space="preserve">                                                                                </text>
 </svg>

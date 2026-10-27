@@ -205,6 +205,10 @@ Candidates for upstream contributions that would remove mirrored code: source po
 tree nodes, a public fragment extraction on `ComponentAdapter`, and a reusable type grammar helper
 for argument definitions.
 
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## Development
 
 ```bash
