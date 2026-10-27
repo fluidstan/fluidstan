@@ -41,8 +41,11 @@ final class F
     /**
      * A variable of a component that is not an argument: the collection may provide it through
      * getAdditionalVariables(), whose return type the PHPStan extension resolves.
+     *
+     * @param bool $maybeLocal the variable may have been assigned on another path; a name the collection
+     *                         does not provide is null then, as Fluid returns null, instead of an error
      */
-    public static function additionalVariable(string $collection, string $component, string $name): mixed
+    public static function additionalVariable(string $collection, string $component, string $name, bool $maybeLocal = false): mixed
     {
         return null;
     }

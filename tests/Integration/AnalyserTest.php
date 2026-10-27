@@ -41,6 +41,17 @@ final class AnalyserTest extends TestCase
             // f:variable reassigned from the collection's value: int|float afterwards
             'Meta.html:15 fluidstan.property.unresolvable',
             'Meta.html:15 fluidstan.property.unresolvable',
+            // assigned in f:then only: the else branch reads the collection's value ...
+            'Meta.html:17 fluidstan.property.unresolvable',
+            // ... and afterwards it is either
+            'Meta.html:18 fluidstan.property.unresolvable',
+            'Meta.html:18 fluidstan.property.unresolvable',
+            // loop variables shadow the collection inside the loop and are restored afterwards
+            'Meta.html:19 fluidstan.property.unresolvable',
+            'Meta.html:19 fluidstan.property.unresolvable',
+            'Meta.html:20 variable.undefined',
+            // a conditional local the collection does not provide is null on the other path, not an error
+            'Meta.html:22 fluidstan.property.unresolvable',
             'Price.html:8 fluidstan.property.unresolvable',
             'Price.html:10 fluidstan.output.object',
             'Price.html:11 fluidstan.property.unresolvable',

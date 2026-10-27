@@ -14,5 +14,11 @@
     <f:variable name="version" value="{version + 1}" />
     {version.digits}
     <f:section name="Extra">{component.class}</f:section>
+    <f:if condition="{nothing}"><f:then><f:variable name="author" value="x" /></f:then><f:else>{author.inElse}</f:else></f:if>
+    {author.afterIf}
+    <f:for each="{component.flags}" as="nothing" iteration="i">{nothing.inLoop} {i.cycle}</f:for>
+    {nothing.afterLoop} {i.afterLoop}
+    <f:if condition="{version}"><f:variable name="local" value="1" /></f:if>
+    {local.afterIf}
 </div>
 </html>

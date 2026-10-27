@@ -17,6 +17,7 @@ use PHPStan\Type\FloatType;
 use PHPStan\Type\IntegerType;
 use PHPStan\Type\IterableType;
 use PHPStan\Type\MixedType;
+use PHPStan\Type\NullType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\StringType;
 use PHPStan\Type\Type;
@@ -119,8 +120,12 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
                 }
 
                 $variables = $this->additionalVariables->resolve($collections[0]->getValue());
-                if (!$variables instanceof Type || !$variables->isArray()->yes() || $variables->hasOffsetValueType($names[0])->no()) {
+                if (!$variables instanceof Type || !$variables->isArray()->yes()) {
                     return new MixedType();
+                }
+
+                if ($variables->hasOffsetValueType($names[0])->no()) {
+                    return $argType(3)->isTrue()->yes() ? new NullType() : new MixedType();
                 }
 
                 return $variables->getOffsetValueType($names[0]);

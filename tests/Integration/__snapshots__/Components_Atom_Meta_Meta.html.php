@@ -54,4 +54,38 @@ function fluidstan_template_HASH($title): void
         // fluid:16
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($component, 'class'));
     };
+    // fluid:17
+    if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'nothing'))) {
+        // fluid:17
+        $author = 'x';
+    } else {
+        // fluid:17
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author'), 'inElse'));
+    }
+    // fluid:17
+    $author = $author ?? \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author', true);
+    // fluid:18
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($author, 'afterIf'));
+    // fluid:19
+    foreach (\FluidStan\Runtime\F::each(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'component'), 'flags')) as $nothing) {
+        // fluid:19
+        $i = \FluidStan\Runtime\F::iteration();
+        // fluid:19
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($nothing, 'inLoop'));
+        // fluid:19
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($i, 'cycle'));
+    }
+    // fluid:20
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'nothing'), 'afterLoop'));
+    // fluid:20
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'i'), 'afterLoop'));
+    // fluid:21
+    if (\FluidStan\Runtime\F::bool($version)) {
+        // fluid:21
+        $local = 1;
+    }
+    // fluid:21
+    $local = $local ?? \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'local', true);
+    // fluid:22
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($local, 'afterIf'));
 }

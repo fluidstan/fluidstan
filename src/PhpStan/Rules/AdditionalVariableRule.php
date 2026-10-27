@@ -35,6 +35,11 @@ final class AdditionalVariableRule extends FacadeCallRule
             return [];
         }
 
+        // Assigned on another path: not provided means null, as at runtime
+        if ($this->argumentType($call, 3, $scope)->isTrue()->yes()) {
+            return [];
+        }
+
         return [
             RuleErrorBuilder::message(\sprintf(
                 'Variable "%s" is not defined: it is neither an argument nor provided by %s::getAdditionalVariables().',

@@ -328,7 +328,7 @@ final class TemplateTranspiler
 
         $statements = [];
         if ($iteration !== null) {
-            $statements[] = $this->mark($this->assignVariable($iteration, $this->call('iteration', [])), $line);
+            $statements[] = $this->mark($this->loopAlias($this->assignVariable($iteration, $this->call('iteration', []))), $line);
         }
 
         $statements = array_merge($statements, $this->emitBlock($node->getChildNodes()));
@@ -352,8 +352,8 @@ final class TemplateTranspiler
 
         // The group is a slice of the input; its elements have the element type of the input.
         $statements = [
-            $this->mark($this->assignVariable($groupKey, $this->call('valueOf', [$this->call('each', [$each])])), $line),
-            $this->mark($this->assignVariable($as, $this->call('each', [$each])), $line),
+            $this->mark($this->loopAlias($this->assignVariable($groupKey, $this->call('valueOf', [$this->call('each', [$each])]))), $line),
+            $this->mark($this->loopAlias($this->assignVariable($as, $this->call('each', [$each]))), $line),
         ];
         $statements = array_merge($statements, $this->emitBlock($node->getChildNodes()));
         return [$this->mark(new Foreach_($this->call('each', [$each]), $this->variable('__grouped'), ['stmts' => $statements]), $line)];
@@ -1142,6 +1142,15 @@ final class TemplateTranspiler
     private function assignVariable(string $fluidName, Expr $value): Expression
     {
         return new Expression(new Assign($this->variable($fluidName), $value));
+    }
+
+    /**
+     * Marks the assignment of a loop variable Fluid restores when the loop ends.
+     */
+    private function loopAlias(Expression $statement): Expression
+    {
+        $statement->expr->setAttribute(AdditionalVariableRouter::LOOP_ALIAS, true);
+        return $statement;
     }
 
     private function variable(string $fluidName): Variable
