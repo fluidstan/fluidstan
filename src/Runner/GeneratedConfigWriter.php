@@ -35,6 +35,9 @@ final class GeneratedConfigWriter
             'ignoreErrors' => [
                 ['identifier' => 'missingType.iterableValue'],
                 ['identifier' => 'missingType.generics'],
+                // A condition on an object is not redundant to Fluid: an empty Countable is false
+                ['identifier' => 'staticMethod.alreadyNarrowedType', 'message' => '#F::bool\\(\\)#'],
+                ['identifier' => 'staticMethod.impossibleType', 'message' => '#F::bool\\(\\)#'],
             ],
         ], $configuration->phpstanParameters);
         $parameters['paths'] = [$generatedDir];

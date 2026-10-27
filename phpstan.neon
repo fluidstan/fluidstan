@@ -42,7 +42,12 @@ parameters:
                 - parameter.internalClass
                 - parameter.internalInterface
                 - return.internalInterface
+                - staticMethod.internalClass
                 - property.internalClass
                 - property.internalInterface
                 - return.internalClass
             message: '#TYPO3Fluid#'
+        # PHPStan injects the TypeSpecifier through TypeSpecifierAwareExtension, after construction
+        -
+            identifier: property.uninitialized
+            path: src/PhpStan/ConditionTypeSpecifyingExtension.php

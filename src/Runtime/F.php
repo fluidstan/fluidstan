@@ -80,9 +80,38 @@ final class F
     }
 
     /**
-     * A Fluid boolean expression; all operands are converted with Fluid's truthiness rules.
+     * A single value as a condition, converted with Fluid's truthiness rules; the PHPStan extension
+     * narrows the value in the true branch.
      */
-    public static function bool(mixed ...$operands): bool
+    public static function bool(mixed $value): bool
+    {
+        return false;
+    }
+
+    /**
+     * A comparison in a condition, evaluated with the PHP operator as Fluid's BooleanParser does; the
+     * PHPStan extension narrows the operands in the branches.
+     *
+     * @param '=='|'!='|'==='|'!=='|'<'|'<='|'>'|'>=' $operator
+     */
+    public static function compare(mixed $left, string $operator, mixed $right): bool
+    {
+        return false;
+    }
+
+    /**
+     * An operand of an arithmetic operation in a condition, as Fluid's BooleanParser converts it
+     * (convertNodeToBoolean()): a Countable becomes a bool, UnsafeHTML a string, anything else stays.
+     */
+    public static function operand(mixed $value): mixed
+    {
+        return null;
+    }
+
+    /**
+     * A condition whose compiled form could not be used: its operands are checked, its outcome is unknown.
+     */
+    public static function condition(mixed ...$operands): bool
     {
         return false;
     }

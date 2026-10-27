@@ -56,7 +56,7 @@ function fluidstan_template_HASH($item, $label = 'Price', $tags = null): void
     // fluid:17
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, ['subject' => \FluidStan\Runtime\F::arg('subject', \FluidStan\Runtime\F::get($item, 'tags'), 'array|\ArrayAccess|\Traversable', false, 'f:count')], 'f:count'));
     // fluid:18
-    if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active'), \FluidStan\Runtime\F::get($item, 'image'))) {
+    if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active')) && \FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'image'))) {
     }
     // fluid:19
     $total = \FluidStan\Runtime\F::math(\FluidStan\Runtime\F::get($item, 'price'), 1);

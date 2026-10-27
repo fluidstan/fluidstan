@@ -40,10 +40,15 @@ use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Return_;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\ParentConnectingVisitor;
+use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
 use TYPO3Fluid\Fluid\Core\Compiler\TemplateCompiler;
 use TYPO3Fluid\Fluid\Core\Component\ComponentAdapter;
 use TYPO3Fluid\Fluid\Core\Component\ComponentDefinitionProviderInterface;
+use TYPO3Fluid\Fluid\Core\Parser\BooleanParser;
 use TYPO3Fluid\Fluid\Core\Parser\ParsingState;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ArrayNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\BooleanNode;
@@ -762,29 +767,52 @@ final class TemplateTranspiler
         return new Ternary($this->conditionExpr($arguments['condition'] ?? null), $then, $else);
     }
 
-    private function conditionExpr(mixed $condition): StaticCall
+    private function conditionExpr(mixed $condition): Expr
     {
         if ($condition instanceof BooleanNode) {
             return $this->booleanExpr($condition);
         }
 
-        return $this->call('bool', $condition === null ? [] : [$this->expr($condition)]);
+        return $condition === null ? $this->call('condition', []) : $this->call('bool', [$this->expr($condition)]);
     }
 
-    private function booleanExpr(BooleanNode $node): StaticCall
+    /**
+     * The condition as Fluid's BooleanParser compiles it to PHP, with the operands substituted for
+     * its placeholders: the same grammar, precedence and operators as at runtime, `&&`, `||` and
+     * `!` as PHP operators, comparisons as PHP comparisons, truthiness as `F::bool()`. Should the
+     * compiled code not be usable, the operands are checked through `F::condition()` instead.
+     */
+    private function booleanExpr(BooleanNode $node): Expr
     {
+        $stack = $node->getStack();
         $operands = [];
-        foreach ($node->getStack() as $item) {
-            if ($item instanceof NodeInterface) {
-                if ($item instanceof TextNode) {
-                    continue;
-                }
-
-                $operands[] = $this->expr($item);
+        foreach ($stack as $key => $item) {
+            if ($item instanceof NodeInterface && !$item instanceof TextNode) {
+                $operands['node' . $key] = $this->expr($item);
             }
         }
 
-        return $this->call('bool', $operands);
+        try {
+            $code = (new BooleanParser())->compile(BooleanNode::reconcatenateExpression($stack));
+            $statements = (new ParserFactory())->createForNewestSupportedVersion()->parse('<?php return ' . $code . ';');
+        } catch (\Throwable) {
+            $statements = null;
+        }
+
+        $return = $statements[0] ?? null;
+        if (!$return instanceof Return_ || !$return->expr instanceof Expr) {
+            return $this->call('condition', array_values($operands));
+        }
+
+        $rewriter = new ConditionCodeRewriter($operands);
+        $traverser = new NodeTraverser(new ParentConnectingVisitor(), $rewriter);
+        $rewritten = $traverser->traverse([$return->expr])[0] ?? null;
+        if (!$rewriter->isComplete() || !$rewritten instanceof Expr) {
+            return $this->call('condition', array_values($operands));
+        }
+
+        // Fluid converts the result with convertToBoolean() too: a bare literal such as "yes" is true
+        return ConditionCodeRewriter::isBoolean($rewritten) ? $rewritten : $this->call('bool', [$rewritten]);
     }
 
     private function ternaryExpr(TernaryExpressionNode $node): Ternary
@@ -811,7 +839,7 @@ final class TemplateTranspiler
             }
         }
 
-        return new Ternary($this->call('bool', $operands), $this->valueOrAccessor($then), $this->valueOrAccessor($else));
+        return new Ternary($this->call('condition', $operands), $this->valueOrAccessor($then), $this->valueOrAccessor($else));
     }
 
     private function mathExpr(MathExpressionNode $node): StaticCall

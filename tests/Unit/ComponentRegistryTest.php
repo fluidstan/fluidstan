@@ -33,6 +33,13 @@ final class ComponentRegistryTest extends TestCase
         $this->assertNull($registry->find(self::COMPONENTS . '/ComponentCollection.php'));
     }
 
+    public function testAllNamespacesMayBeIgnored(): void
+    {
+        $registry = ComponentRegistry::fromNamespaces(['f' => null, 'x' => null], [], new AnalysisViewHelperResolver());
+
+        $this->assertNull($registry->find(self::COMPONENTS . '/Atom/Price/Price.html'));
+    }
+
     public function testPrefersDelegatesTheFrameworkBuilt(): void
     {
         // TYPO3 14 configures collections without a class; their namespace string is not a class name

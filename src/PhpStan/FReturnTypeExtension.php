@@ -41,7 +41,7 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
     public function isStaticMethodSupported(MethodReflection $methodReflection): bool
     {
-        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg', 'additionalVariable'], true);
+        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg', 'additionalVariable', 'operand'], true);
     }
 
     public function getTypeFromStaticMethodCall(MethodReflection $methodReflection, StaticCall $methodCall, Scope $scope): ?Type
@@ -111,6 +111,9 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
             case 'arg':
                 return $argType(1);
+
+            case 'operand':
+                return FluidConversion::ofOperand($argType(0));
 
             case 'additionalVariable':
                 $collections = $argType(0)->getConstantStrings();
