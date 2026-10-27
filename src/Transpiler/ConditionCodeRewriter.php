@@ -36,10 +36,11 @@ use TYPO3Fluid\Fluid\Core\Parser\BooleanParser;
  * Turns the PHP code Fluid's BooleanParser compiles for a condition into analysable code: the
  * `$context["nodeN"]` placeholders become the operand expressions, the truthiness conversion
  * `BooleanParser::convertNodeToBoolean()` becomes `F::bool()` where the operand is used as a
- * boolean, and a comparison becomes `F::compare()` over the operands. Inside a comparison Fluid's
- * conversion returns the value itself, except that a Countable becomes a bool and UnsafeHTML a
- * string; the operand is passed as is, and the PHPStan extension keeps that in mind when it
- * narrows. Requires a ParentConnectingVisitor to run first.
+ * boolean, and a comparison becomes `F::compare()` over the operands. Inside a comparison or an
+ * arithmetic operation Fluid's conversion returns the value itself, except that a Countable becomes
+ * a bool and UnsafeHTML a string. A comparison gets the operand as is, so that PHPStan can narrow
+ * it, and the extension keeps the conversion in mind; an arithmetic operation gets `F::operand()`,
+ * whose type is the converted one. Requires a ParentConnectingVisitor to run first.
  */
 final class ConditionCodeRewriter extends NodeVisitorAbstract
 {
@@ -126,7 +127,11 @@ final class ConditionCodeRewriter extends NodeVisitorAbstract
         }
 
         $parent = $node->getAttribute('parent');
-        $comparison = $parent instanceof BinaryOp && !$parent instanceof BooleanAnd && !$parent instanceof BooleanOr && !$parent instanceof LogicalAnd && !$parent instanceof LogicalOr;
-        return $comparison ? $value : new StaticCall(new FullyQualified(F::class), 'bool', [new Arg($value)]);
+        if ($parent instanceof BinaryOp && self::comparator($parent) !== null) {
+            return $value;
+        }
+
+        $arithmetic = $parent instanceof BinaryOp && !$parent instanceof BooleanAnd && !$parent instanceof BooleanOr && !$parent instanceof LogicalAnd && !$parent instanceof LogicalOr;
+        return new StaticCall(new FullyQualified(F::class), $arithmetic ? 'operand' : 'bool', [new Arg($value)]);
     }
 }

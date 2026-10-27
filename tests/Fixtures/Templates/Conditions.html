@@ -4,6 +4,7 @@
     @var FluidStan\Tests\Fixtures\Model\Item|null other
     @var string|null label
     @var int|null count
+    @var ArrayObject|null storage
 </f:comment>
 <fs:atom.price item="{item}" />
 <f:if condition="{item}"><fs:atom.price item="{item}" /></f:if>
@@ -27,4 +28,9 @@
 <f:if condition="{item.title}"><fs:atom.price item="{item}" /></f:if>
 <f:if condition="{item} && {item.title} == 'x'"><fs:atom.price item="{item}" /></f:if>
 <f:if condition="{item}"><f:else if="{other}"><fs:atom.price item="{item}" /><fs:atom.price item="{other}" /></f:else></f:if>
+<f:if condition="{storage} == 0"><fs:atom.price item="{storage}" /></f:if>
+<f:if condition="{storage} === true"><fs:atom.price item="{storage}" /></f:if>
+<f:if condition="{storage} > 0"><fs:atom.price item="{storage}" /></f:if>
+<f:if condition="{count} % 2"><fs:atom.typed text="x" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{storage} % 2"><fs:atom.price item="{storage}" /></f:if>
 </html>

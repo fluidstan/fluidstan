@@ -152,9 +152,10 @@ What does **not** narrow, on purpose:
 - a condition on a property path, `{item.title}`, says nothing about `item` itself
 - the loose comparisons `==` and `!=`, even against a literal: `{label} == 'abc'` leaves `label` as
   `string|null`. Fluid applies the PHP operator, and PHPStan is deliberately cautious with loose
-  comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP, except that a
-  strict comparison of a `Countable` with a bool or of `UnsafeHTML` with a string narrows nothing,
-  because Fluid compares the count and the string there
+  comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP
+- comparisons of a value that may be a `Countable` or `UnsafeHTML` with anything but an object: Fluid
+  compares a bool or a string in their place, so an empty `ObjectStorage` does equal `0` there, and
+  PHPStan's reasoning about the object would be wrong
 
 Conditions are not re-implemented: the PHP code Fluid's own `BooleanParser` compiles for them is
 reused with the operands substituted, so grammar, precedence and comparison semantics are Fluid's.
@@ -196,6 +197,7 @@ the transpiler. When Fluid changes one of these, FluidStan must follow:
 | Argument parsing with non-fatal validation | `TemplateParser::parseArguments()` and `abortIfRequiredArgumentsAreMissing()` |
 | Iteration variable keys | `ForViewHelper` |
 | Truthiness of conditions | `BooleanNode::convertToBoolean()` |
+| Operand conversion in conditions | `BooleanParser::convertNodeToBoolean()` |
 | Condition grammar, precedence and comparisons | `BooleanParser::compile()`, whose PHP code is reused with the operands substituted |
 | Component names from template files (Fluid 4 only) | `AbstractComponentCollection::getAvailableComponents()` (Fluid 5) |
 

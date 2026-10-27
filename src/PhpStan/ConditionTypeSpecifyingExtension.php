@@ -20,10 +20,7 @@ use PHPStan\Analyser\TypeSpecifier;
 use PHPStan\Analyser\TypeSpecifierAwareExtension;
 use PHPStan\Analyser\TypeSpecifierContext;
 use PHPStan\Reflection\MethodReflection;
-use PHPStan\Type\ObjectType;
 use PHPStan\Type\StaticMethodTypeSpecifyingExtension;
-use PHPStan\Type\Type;
-use TYPO3Fluid\Fluid\Core\Parser\UnsafeHTML;
 
 /**
  * What a condition says about its operands in the branches of f:if.
@@ -35,8 +32,8 @@ use TYPO3Fluid\Fluid\Core\Parser\UnsafeHTML;
  *
  * `F::compare($x, $operator, $y)`: Fluid's BooleanParser applies the PHP operator, so the comparison
  * is handed to PHPStan as that PHP expression and narrows the way PHPStan narrows it. Fluid first
- * turns a Countable operand into a bool and UnsafeHTML into a string, which only matters for a
- * strict comparison against a bool or a string; nothing is narrowed then.
+ * turns a Countable operand into a bool and UnsafeHTML into a string (FluidConversion); where that
+ * can change the outcome, nothing is narrowed, because PHPStan would reason about the raw object.
  */
 final class ConditionTypeSpecifyingExtension implements StaticMethodTypeSpecifyingExtension, TypeSpecifierAwareExtension
 {
@@ -87,22 +84,13 @@ final class ConditionTypeSpecifyingExtension implements StaticMethodTypeSpecifyi
             return new SpecifiedTypes();
         }
 
-        if (\in_array($operator, ['===', '!=='], true) && ($this->convertedByFluid($scope->getType($left), $scope->getType($right)) || $this->convertedByFluid($scope->getType($right), $scope->getType($left)))) {
+        $leftType = $scope->getType($left);
+        $rightType = $scope->getType($right);
+        if (FluidConversion::affectsComparison($leftType, $rightType) || FluidConversion::affectsComparison($rightType, $leftType)) {
             return new SpecifiedTypes();
         }
 
         return $this->typeSpecifier->specifyTypesInCondition($scope, $comparison, $context);
-    }
-
-    /**
-     * Whether Fluid's conversion of the operand (BooleanParser::convertNodeToBoolean()) can make a
-     * strict comparison with the other side come out differently than on the raw value
-     */
-    private function convertedByFluid(Type $operand, Type $other): bool
-    {
-        $countable = !(new ObjectType(\Countable::class))->isSuperTypeOf($operand)->no() && !$other->isBoolean()->no();
-        $unsafeHtml = !(new ObjectType(UnsafeHTML::class))->isSuperTypeOf($operand)->no() && !$other->isString()->no();
-        return $countable || $unsafeHtml;
     }
 
     public function setTypeSpecifier(TypeSpecifier $typeSpecifier): void

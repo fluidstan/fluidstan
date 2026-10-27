@@ -100,6 +100,15 @@ final class F
     }
 
     /**
+     * An operand of an arithmetic operation in a condition, as Fluid's BooleanParser converts it
+     * (convertNodeToBoolean()): a Countable becomes a bool, UnsafeHTML a string, anything else stays.
+     */
+    public static function operand(mixed $value): mixed
+    {
+        return null;
+    }
+
+    /**
      * A condition whose compiled form could not be used: its operands are checked, its outcome is unknown.
      */
     public static function condition(mixed ...$operands): bool
