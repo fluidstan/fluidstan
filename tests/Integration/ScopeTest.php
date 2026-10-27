@@ -56,16 +56,16 @@ final class ScopeTest extends TestCase
         yield 'assigned without else' => ['AssignWithoutElse', ['A' => [$c, $l]], []];
         yield 'assigned in a nested condition' => ['NestedIf', ['A' => [$c, $l], 'B' => [$c, $l]], []];
         yield 'loop variable shadows and is restored' => ['LoopAlias', ['A' => [$l], 'B' => [$c]], []];
-        // the key of an iterable<Local> is mixed to FluidStan
-        yield 'loop key shadows and is restored' => ['LoopKeyAlias', ['A' => [$n], 'B' => [$c]], ['A' => []]];
+        // the key of a list is an int to FluidStan
+        yield 'loop key shadows and is restored' => ['LoopKeyAlias', ['A' => [$n], 'B' => [$c]], ['A' => ['other']]];
         yield 'iteration variable shadows and is restored' => ['LoopIterationAlias', ['A' => [$n], 'B' => [$c]], ['A' => ['other']]];
         yield 'assigned in the loop body persists across iterations and after' => ['LoopBodyAssign', ['A' => [$c, $l], 'B' => [$l], 'C' => [$c, $l]], []];
         yield 'assigned in the loop body, read after' => ['LoopBodyAssignThenRead', ['A' => [$c, $l]], []];
         yield 'loop variable restores an earlier local value' => ['AliasRestoresEarlierLocal', ['A' => [$c], 'B' => [$l]], []];
         yield 'loop variable restores an argument' => ['AliasRestoresArgument', ['A' => [$c], 'B' => [$l]], []];
         yield 'nested loops with the same variable' => ['NestedLoopAlias', ['A' => [$c], 'B' => [$l], 'C' => [$c]], []];
-        // the group is an iterable to FluidStan, and the group key is approximated by the element type
-        yield 'grouped loop restores group and key' => ['GroupedLoopAlias', ['A' => [$n], 'B' => [$n], 'C' => [$c], 'D' => [$n]], ['A' => [], 'B' => [$l]]];
+        // the group is a list to FluidStan, and the group key is approximated by the element type
+        yield 'grouped loop restores group and key' => ['GroupedLoopAlias', ['A' => [$n], 'B' => [$n], 'C' => [$c], 'D' => [$n]], ['A' => ['other'], 'B' => [$l]]];
         yield 'never assigned, not provided' => ['UnprovidedNever', ['A' => [$n]], []];
         yield 'conditionally assigned, not provided' => ['UnprovidedConditional', ['A' => [$l, $n]], []];
         yield 'assigned in a loop body, not provided' => ['UnprovidedInLoop', ['A' => [$l, $n]], []];
@@ -182,8 +182,8 @@ final class ScopeTest extends TestCase
         }
 
         return match (true) {
-            preg_match('/"fromLocal" does not exist on .*Provided/', $diagnostic->message) === 1 => self::COLLECTION,
-            preg_match('/"fromCollection" does not exist on .*Local/', $diagnostic->message) === 1 => self::LOCAL,
+            preg_match('/^Property "fromLocal" does not exist on \S+\\\\Provided \(/', $diagnostic->message) === 1 => self::COLLECTION,
+            preg_match('/^Property "fromCollection" does not exist on \S+\\\\Local \(/', $diagnostic->message) === 1 => self::LOCAL,
             default => 'other',
         };
     }
