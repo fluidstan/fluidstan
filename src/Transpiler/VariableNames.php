@@ -15,9 +15,4 @@ final class VariableNames
 
         return $name;
     }
-
-    public static function fluid(string $phpName): string
-    {
-        return $phpName;
-    }
 }

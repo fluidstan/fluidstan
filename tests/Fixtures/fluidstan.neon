@@ -1,9 +1,11 @@
 parameters:
     paths:
         - Components
+        - Documented
         - Templates
     suffixes:
         - .html
     namespaces:
         fs: FluidStan\Tests\Fixtures\Components\ComponentCollection
+        fd: FluidStan\Tests\Fixtures\Documented\DocumentedCollection
     tmpDir: ../../.cache/fluidstan-fixtures

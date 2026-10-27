@@ -29,6 +29,29 @@ final class AnalyserTest extends TestCase
             $result->diagnostics->all(),
         );
         $this->assertSame([
+            // a component without arguments still has its collection's variables
+            'Logo.html:2 fluidstan.property.unresolvable',
+            'Logo.html:2 variable.undefined',
+            // variables from getAdditionalVariables(), typed after the method's return statements
+            'Meta.html:6 fluidstan.property.unresolvable',
+            'Meta.html:7 fluidstan.property.unresolvable',
+            'Meta.html:8 fluidstan.property.unresolvable',
+            'Meta.html:10 fluidstan.for.notIterable',
+            'Meta.html:12 variable.undefined',
+            // f:variable reassigned from the collection's value: int|float afterwards
+            'Meta.html:15 fluidstan.property.unresolvable',
+            'Meta.html:15 fluidstan.property.unresolvable',
+            // assigned in f:then only: the else branch reads the collection's value ...
+            'Meta.html:17 fluidstan.property.unresolvable',
+            // ... and afterwards it is either
+            'Meta.html:18 fluidstan.property.unresolvable',
+            'Meta.html:18 fluidstan.property.unresolvable',
+            // loop variables shadow the collection inside the loop and are restored afterwards
+            'Meta.html:19 fluidstan.property.unresolvable',
+            'Meta.html:19 fluidstan.property.unresolvable',
+            'Meta.html:20 variable.undefined',
+            // a conditional local the collection does not provide is null on the other path, not an error
+            'Meta.html:22 fluidstan.property.unresolvable',
             'Price.html:8 fluidstan.property.unresolvable',
             'Price.html:10 fluidstan.output.object',
             'Price.html:11 fluidstan.property.unresolvable',
@@ -41,6 +64,10 @@ final class AnalyserTest extends TestCase
             'Card.html:9 fluid.component.unknownSlot',
             'Card.html:14 fluidstan.property.unresolvable',
             'Card.html:16 fluid.render.unknownSection',
+            // the declared @return shape wins over what the method body returns
+            'Note.html:4 fluidstan.property.unresolvable',
+            'Note.html:4 fluidstan.property.unresolvable',
+            'Note.html:4 variable.undefined',
             // objects and lists passed to scalar or class typed arguments
             'Arguments.html:7 fluidstan.argument.type',
             'Arguments.html:7 fluidstan.argument.type',
@@ -56,6 +83,6 @@ final class AnalyserTest extends TestCase
             'Arguments.html:9 fluid.parser',
             'Plain.html:2 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(6, $result->templateCount);
+        $this->assertSame(9, $result->templateCount);
     }
 }

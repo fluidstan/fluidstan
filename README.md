@@ -131,6 +131,12 @@ Plain templates (and overrides in components): a `@var` annotation in a comment,
 </f:comment>
 ```
 
+Variables a component collection provides through `getAdditionalVariables()` are known as well, without
+running the method: PHPStan infers the array shape from its return statements, the way it infers closure
+return types, so a collection that builds `['component' => ['class' => ..., 'prefix' => ...]]` gives
+`{component.class}` the type `string`. A `@return` array shape in the method's PHPDoc takes precedence,
+and `@var` in the template overrides both.
+
 ## How it works
 
 1. Templates are parsed with Fluid's own `TemplateParser`, configured with the real ViewHelper
@@ -150,9 +156,10 @@ provider, which erases the scope information PHPStan needs.
 
 FluidStan reuses Fluid wherever Fluid exposes the behaviour: the parser and syntax tree, namespace
 detection, ViewHelper resolution and argument definitions, the parser's own argument validation
-(unknown and missing arguments), component definitions and slots, section registration, template
-discovery (`TemplateFinder`, Fluid 5), deprecation reporting (as `TemplateValidator` does) and the
-unwrapping of wrapped parse exceptions.
+(unknown and missing arguments), component definitions and slots, the component list of a collection
+(Fluid 5), section registration,
+template discovery (`TemplateFinder`, Fluid 5), deprecation reporting (as `TemplateValidator` does) and
+the unwrapping of wrapped parse exceptions.
 
 Some runtime behaviour has no static counterpart in Fluid and is mirrored in the PHPStan extension or
 the transpiler. When Fluid changes one of these, FluidStan must follow:
@@ -166,6 +173,7 @@ the transpiler. When Fluid changes one of these, FluidStan must follow:
 | Fragment to slot mapping | `ComponentAdapter` (private helpers) |
 | Argument parsing with non-fatal validation | `TemplateParser::parseArguments()` and `abortIfRequiredArgumentsAreMissing()` |
 | Iteration variable keys | `ForViewHelper` |
+| Component names from template files (Fluid 4 only) | `AbstractComponentCollection::getAvailableComponents()` (Fluid 5) |
 
 Candidates for upstream contributions that would remove mirrored code: source positions on syntax
 tree nodes, a public fragment extraction on `ComponentAdapter`, and a reusable type grammar helper

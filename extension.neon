@@ -2,6 +2,10 @@ services:
     -
         class: FluidStan\PhpStan\PropertyPathResolver
     -
+        class: FluidStan\PhpStan\AdditionalVariablesResolver
+        arguments:
+            parser: @currentPhpVersionRichParser
+    -
         class: FluidStan\PhpStan\FReturnTypeExtension
         tags:
             - phpstan.broker.dynamicStaticMethodReturnTypeExtension
@@ -12,3 +16,4 @@ rules:
     - FluidStan\PhpStan\Rules\EachRule
     - FluidStan\PhpStan\Rules\ArgumentRule
     - FluidStan\PhpStan\Rules\MathRule
+    - FluidStan\PhpStan\Rules\AdditionalVariableRule

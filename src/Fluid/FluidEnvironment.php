@@ -22,6 +22,8 @@ final class FluidEnvironment
     /** @var array<string, list<string>> */
     private array $namespaces;
 
+    private ?ComponentRegistry $components = null;
+
     public function __construct(private readonly Configuration $configuration)
     {
         $this->namespaces = $configuration->namespaces;
@@ -116,7 +118,8 @@ final class FluidEnvironment
         }
 
         $diagnostics->merge($errorHandler->getDiagnostics());
+        $this->components ??= ComponentRegistry::fromNamespaces($this->namespaces, new AnalysisViewHelperResolver());
 
-        return new ParsedTemplate($file, $source, $parsingState, $parser->getNodeLocations(), $diagnostics, $renderingContext);
+        return new ParsedTemplate($file, $source, $parsingState, $parser->getNodeLocations(), $diagnostics, $renderingContext, $this->components->find($file));
     }
 }

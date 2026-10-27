@@ -16,6 +16,7 @@ parameters:
         - .php-cs-fixer.dist.php
     excludePaths:
         - tests/Fixtures/Components
+        - tests/Fixtures/Documented
         - tests/Fixtures/Templates
         - tests/Integration/__snapshots__
     tmpDir: .cache/phpstan
@@ -29,8 +30,11 @@ parameters:
         -
             identifiers:
                 - class.extendsInternalClass
+                - class.implementsInternalInterface
+                - classConstant.internalInterface
                 - classConstant.internalClass
                 - instanceof.internalClass
+                - instanceof.internalInterface
                 - method.internal
                 - method.internalClass
                 - method.internalInterface
@@ -39,5 +43,6 @@ parameters:
                 - parameter.internalInterface
                 - return.internalInterface
                 - property.internalClass
+                - property.internalInterface
                 - return.internalClass
             message: '#TYPO3Fluid#'

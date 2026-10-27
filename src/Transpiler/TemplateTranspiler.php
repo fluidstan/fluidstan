@@ -6,6 +6,7 @@ namespace FluidStan\Transpiler;
 
 use FluidStan\Diagnostics\Diagnostic;
 use FluidStan\Diagnostics\DiagnosticCollection;
+use FluidStan\Fluid\ComponentTemplate;
 use FluidStan\Fluid\NodeLocations;
 use FluidStan\Fluid\ParsedTemplate;
 use FluidStan\Runtime\F;
@@ -122,7 +123,8 @@ final class TemplateTranspiler
         $this->collectReferencedRoots($root);
         $annotations = $this->annotations->parse($template->source);
         $argumentDefinitions = $state->getArgumentDefinitions();
-        $isComponent = $argumentDefinitions !== [];
+        // A component of a collection may declare no arguments at all
+        $isComponent = $argumentDefinitions !== [] || $template->component instanceof ComponentTemplate;
 
         $preamble = [];
         if ($isComponent) {
@@ -130,6 +132,7 @@ final class TemplateTranspiler
             if (isset($this->referencedRoots['settings']) && !isset($argumentDefinitions['settings']) && !isset($annotations['settings'])) {
                 $preamble[] = $this->mark($this->assignVariable('settings', $this->call('variable', [$this->string('settings')])), 1);
             }
+
         } else {
             foreach (array_keys($this->referencedRoots) as $name) {
                 if (!isset($annotations[$name])) {
@@ -145,6 +148,11 @@ final class TemplateTranspiler
         }
 
         $body = array_merge($preamble, $this->emitBlock($root->getChildNodes()));
+        if ($template->component instanceof ComponentTemplate) {
+            $assigned = array_fill_keys(array_map(VariableNames::php(...), array_keys($argumentDefinitions)), true);
+            $body = (new AdditionalVariableRouter($template->component, $assigned))->route($body);
+        }
+
         $function = $this->buildFunction($template, $argumentDefinitions, $body);
         $function = $this->mark($function, $this->firstArgumentLine($root));
 
@@ -320,7 +328,7 @@ final class TemplateTranspiler
 
         $statements = [];
         if ($iteration !== null) {
-            $statements[] = $this->mark($this->assignVariable($iteration, $this->call('iteration', [])), $line);
+            $statements[] = $this->mark($this->loopAlias($this->assignVariable($iteration, $this->call('iteration', []))), $line);
         }
 
         $statements = array_merge($statements, $this->emitBlock($node->getChildNodes()));
@@ -344,8 +352,8 @@ final class TemplateTranspiler
 
         // The group is a slice of the input; its elements have the element type of the input.
         $statements = [
-            $this->mark($this->assignVariable($groupKey, $this->call('valueOf', [$this->call('each', [$each])])), $line),
-            $this->mark($this->assignVariable($as, $this->call('each', [$each])), $line),
+            $this->mark($this->loopAlias($this->assignVariable($groupKey, $this->call('valueOf', [$this->call('each', [$each])]))), $line),
+            $this->mark($this->loopAlias($this->assignVariable($as, $this->call('each', [$each]))), $line),
         ];
         $statements = array_merge($statements, $this->emitBlock($node->getChildNodes()));
         return [$this->mark(new Foreach_($this->call('each', [$each]), $this->variable('__grouped'), ['stmts' => $statements]), $line)];
@@ -1136,9 +1144,19 @@ final class TemplateTranspiler
         return new Expression(new Assign($this->variable($fluidName), $value));
     }
 
+    /**
+     * Marks the assignment of a loop variable Fluid restores when the loop ends.
+     */
+    private function loopAlias(Expression $statement): Expression
+    {
+        $statement->expr->setAttribute(AdditionalVariableRouter::LOOP_ALIAS, true);
+        return $statement;
+    }
+
     private function variable(string $fluidName): Variable
     {
-        return new Variable(VariableNames::php($fluidName));
+        // The PHP name is sanitized; the Fluid name is kept for messages and lookups
+        return new Variable(VariableNames::php($fluidName), [AdditionalVariableRouter::FLUID_NAME => $fluidName]);
     }
 
     private function literal(mixed $value): Expr

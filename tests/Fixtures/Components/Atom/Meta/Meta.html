@@ -1,0 +1,24 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="title" type="string" />
+
+<div class="{component.class}" data-prefix="{component.prefix}">
+    {component.langPrefix}{title} v{version}
+    {component.nonexistent}
+    {component.class.length}
+    {author.title} {author.nonexistent}
+    <f:for each="{component.flags}" as="flag">{flag}</f:for>
+    <f:for each="{version}" as="digit">{digit}</f:for>
+    <f:if condition="{nothing}">never</f:if>
+    {undeclared}
+    {this}
+    <f:variable name="version" value="{version + 1}" />
+    {version.digits}
+    <f:section name="Extra">{component.class}</f:section>
+    <f:if condition="{nothing}"><f:then><f:variable name="author" value="x" /></f:then><f:else>{author.inElse}</f:else></f:if>
+    {author.afterIf}
+    <f:for each="{component.flags}" as="nothing" iteration="i">{nothing.inLoop} {i.cycle}</f:for>
+    {nothing.afterLoop} {i.afterLoop}
+    <f:if condition="{version}"><f:variable name="local" value="1" /></f:if>
+    {local.afterIf}
+</div>
+</html>

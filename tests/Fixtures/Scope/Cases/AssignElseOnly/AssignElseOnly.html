@@ -1,0 +1,18 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="flag" type="bool" />
+<f:argument name="local" type="FluidStan\Tests\Fixtures\Scope\Local" />
+<f:argument name="items" type="array" />
+<f:argument name="others" type="array" />
+<f:comment>
+    Fluid 4.4 does not accept an empty array for a "Local[]" argument, so the element types are annotated
+    @var list<FluidStan\Tests\Fixtures\Scope\Local> items
+    @var list<FluidStan\Tests\Fixtures\Scope\Provided> others
+</f:comment>
+<f:if condition="{flag}">
+<f:then>
+A:[{v.fromCollection}|{v.fromLocal}]
+</f:then>
+<f:else><f:variable name="v" value="{local}" /></f:else>
+</f:if>
+B:[{v.fromCollection}|{v.fromLocal}]
+</html>
