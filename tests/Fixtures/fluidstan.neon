@@ -7,5 +7,3 @@ parameters:
     namespaces:
         fs: FluidStan\Tests\Fixtures\Components\ComponentCollection
     tmpDir: ../../.cache/fluidstan-fixtures
-    phpstan:
-        level: 8

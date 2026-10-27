@@ -21,7 +21,6 @@ final readonly class Configuration
         public array $suffixes,
         public array $namespaces,
         public array $bootstrapFiles,
-        public int $level,
         public ?string $phpstanBinary,
         public array $phpstanIncludes,
         public array $phpstanParameters,
@@ -34,16 +33,11 @@ final readonly class Configuration
      */
     public function withPaths(array $paths): self
     {
-        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->level, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment);
+        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment);
     }
 
     public function withTmpDir(string $tmpDir): self
     {
-        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->level, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment);
-    }
-
-    public function withLevel(int $level): self
-    {
-        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $level, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment);
+        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment);
     }
 }

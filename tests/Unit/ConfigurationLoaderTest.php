@@ -20,7 +20,6 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame(['.html'], $configuration->suffixes);
         $this->assertSame(['f' => ['TYPO3Fluid\\Fluid\\ViewHelpers']], $configuration->namespaces);
         $this->assertSame([], $configuration->bootstrapFiles);
-        $this->assertSame(8, $configuration->level);
         $this->assertNull($configuration->phpstanBinary);
         $this->assertSame([], $configuration->phpstanIncludes);
         $this->assertSame([], $configuration->phpstanParameters);
@@ -37,7 +36,7 @@ final class ConfigurationLoaderTest extends TestCase
             'bootstrapFiles' => ['vendor/autoload.php'],
             'tmpDir' => 'var/fluidstan',
             'environment' => 'My\\Environment',
-            'phpstan' => ['level' => '6', 'binary' => 'bin/phpstan', 'includes' => ['phpstan.neon'], 'parameters' => ['checkFoo' => true]],
+            'phpstan' => ['binary' => 'bin/phpstan', 'includes' => ['phpstan.neon'], 'parameters' => ['checkFoo' => true]],
         ], '/project');
 
         $this->assertSame(['/project/Components', '/abs/Templates', 'EXT:site/Resources'], $configuration->paths);
@@ -46,7 +45,6 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame(['/project/vendor/autoload.php'], $configuration->bootstrapFiles);
         $this->assertSame('/project/var/fluidstan', $configuration->tmpDir);
         $this->assertSame('My\\Environment', $configuration->environment);
-        $this->assertSame(6, $configuration->level);
         $this->assertSame('/project/bin/phpstan', $configuration->phpstanBinary);
         $this->assertSame(['/project/phpstan.neon'], $configuration->phpstanIncludes);
         $this->assertSame(['checkFoo' => true], $configuration->phpstanParameters);
@@ -60,6 +58,13 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame($root, $configuration->rootDir);
         $this->assertSame([$root . '/Components', $root . '/Templates'], $configuration->paths);
         $this->assertSame(['fs' => [ComponentCollection::class]], array_diff_key($configuration->namespaces, ['f' => true]));
+    }
+
+    public function testPhpStanLevelIsRejected(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('"phpstan.level" is not supported');
+        (new ConfigurationLoader())->fromParameters(['phpstan' => ['level' => 8]], '/project');
     }
 
     public function testMissingConfigFileIsAnError(): void
@@ -77,10 +82,9 @@ final class ConfigurationLoaderTest extends TestCase
     public function testWithersKeepEverythingElse(): void
     {
         $configuration = (new ConfigurationLoader())->fromParameters(['paths' => ['a'], 'environment' => 'E'], '/p');
-        $changed = $configuration->withPaths(['/x'])->withLevel(3)->withTmpDir('/tmp/t');
+        $changed = $configuration->withPaths(['/x'])->withTmpDir('/tmp/t');
 
         $this->assertSame(['/x'], $changed->paths);
-        $this->assertSame(3, $changed->level);
         $this->assertSame('/tmp/t', $changed->tmpDir);
         $this->assertSame('E', $changed->environment);
         $this->assertSame($configuration->namespaces, $changed->namespaces);

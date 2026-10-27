@@ -30,7 +30,6 @@ final class AnalyseCommand extends Command
             ->setDescription('Analyses Fluid templates and components')
             ->addArgument('paths', InputArgument::IS_ARRAY, 'Template files or directories (default: paths from the configuration)')
             ->addOption('configuration', 'c', InputOption::VALUE_REQUIRED, 'Path to fluidstan.neon')
-            ->addOption('level', 'l', InputOption::VALUE_REQUIRED, 'PHPStan rule level for the generated code')
             ->addOption('error-format', null, InputOption::VALUE_REQUIRED, 'table or json', 'table')
             ->addOption('no-phpstan', null, InputOption::VALUE_NONE, 'Only parse and transpile; skip the PHPStan run')
             ->addOption('debug', null, InputOption::VALUE_NONE, 'Keep and show the path of the generated code');
@@ -57,11 +56,6 @@ final class AnalyseCommand extends Command
         if ($configuration->paths === []) {
             $io->error('No paths given. Pass template paths as arguments or configure "paths" in fluidstan.neon.');
             return self::INVALID;
-        }
-
-        $level = $input->getOption('level');
-        if (\is_string($level) && $level !== '') {
-            $configuration = $configuration->withLevel((int) $level);
         }
 
         $analyser = new Analyser(

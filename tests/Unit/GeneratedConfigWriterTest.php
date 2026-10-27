@@ -16,7 +16,7 @@ final class GeneratedConfigWriterTest extends TestCase
         $dir = sys_get_temp_dir() . '/fluidstan-config-' . getmypid();
         $configuration = (new ConfigurationLoader())->fromParameters([
             'bootstrapFiles' => ['/project/boot.php'],
-            'phpstan' => ['level' => 5, 'includes' => ['/project/extra.neon'], 'parameters' => ['paths' => ['ignored'], 'checkFoo' => true]],
+            'phpstan' => ['includes' => ['/project/extra.neon'], 'parameters' => ['paths' => ['ignored'], 'checkFoo' => true]],
         ], '/project');
 
         (new GeneratedConfigWriter())->write($configuration, '/gen', $dir . '/phpstan.neon', '/project/vendor/autoload.php', ['/project/env.php']);
@@ -26,7 +26,7 @@ final class GeneratedConfigWriterTest extends TestCase
         $this->assertSame([GeneratedConfigWriter::extensionFile(), '/project/extra.neon'], $written['includes'] ?? null);
         $parameters = $written['parameters'] ?? null;
         $this->assertIsArray($parameters);
-        $this->assertSame(5, $parameters['level'] ?? null);
+        $this->assertSame(8, $parameters['level'] ?? null);
         $this->assertSame(['/gen'], $parameters['paths'] ?? null, 'generated dir wins over user parameters');
         $this->assertSame(['/project/vendor/autoload.php', '/project/boot.php', '/project/env.php'], $parameters['bootstrapFiles'] ?? null);
         $this->assertSame('/project/.cache/fluidstan/phpstan', $parameters['tmpDir'] ?? null);
