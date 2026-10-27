@@ -89,6 +89,17 @@ final class F
     }
 
     /**
+     * A comparison in a condition, evaluated with the PHP operator as Fluid's BooleanParser does; the
+     * PHPStan extension narrows the operands in the branches.
+     *
+     * @param '=='|'!='|'==='|'!=='|'<'|'<='|'>'|'>=' $operator
+     */
+    public static function compare(mixed $left, string $operator, mixed $right): bool
+    {
+        return false;
+    }
+
+    /**
      * A condition whose compiled form could not be used: its operands are checked, its outcome is unknown.
      */
     public static function condition(mixed ...$operands): bool

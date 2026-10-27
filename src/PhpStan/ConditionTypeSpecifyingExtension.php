@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace FluidStan\PhpStan;
 
 use FluidStan\Runtime\F;
+use PhpParser\Node\Expr\BinaryOp\Equal;
+use PhpParser\Node\Expr\BinaryOp\Greater;
+use PhpParser\Node\Expr\BinaryOp\GreaterOrEqual;
+use PhpParser\Node\Expr\BinaryOp\Identical;
+use PhpParser\Node\Expr\BinaryOp\NotEqual;
+use PhpParser\Node\Expr\BinaryOp\NotIdentical;
+use PhpParser\Node\Expr\BinaryOp\Smaller;
+use PhpParser\Node\Expr\BinaryOp\SmallerOrEqual;
 use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Analyser\SpecifiedTypes;
@@ -12,14 +20,23 @@ use PHPStan\Analyser\TypeSpecifier;
 use PHPStan\Analyser\TypeSpecifierAwareExtension;
 use PHPStan\Analyser\TypeSpecifierContext;
 use PHPStan\Reflection\MethodReflection;
+use PHPStan\Type\ObjectType;
 use PHPStan\Type\StaticMethodTypeSpecifyingExtension;
+use PHPStan\Type\Type;
+use TYPO3Fluid\Fluid\Core\Parser\UnsafeHTML;
 
 /**
+ * What a condition says about its operands in the branches of f:if.
+ *
  * `F::bool($x)`, an operand used as a boolean: in the true branch the value is not null, false,
  * empty or zero. Fluid's truthiness (BooleanNode::convertToBoolean()) differs from PHP's only in
  * what it rejects, the string "false" and an empty Countable, so narrowing with PHP's rules is
- * sound in the true branch; the false branch is left alone. Comparisons are PHP comparisons in the
- * generated code and narrow the way PHPStan narrows them.
+ * sound in the true branch; the false branch is left alone.
+ *
+ * `F::compare($x, $operator, $y)`: Fluid's BooleanParser applies the PHP operator, so the comparison
+ * is handed to PHPStan as that PHP expression and narrows the way PHPStan narrows it. Fluid first
+ * turns a Countable operand into a bool and UnsafeHTML into a string, which only matters for a
+ * strict comparison against a bool or a string; nothing is narrowed then.
  */
 final class ConditionTypeSpecifyingExtension implements StaticMethodTypeSpecifyingExtension, TypeSpecifierAwareExtension
 {
@@ -33,17 +50,59 @@ final class ConditionTypeSpecifyingExtension implements StaticMethodTypeSpecifyi
 
     public function isStaticMethodSupported(MethodReflection $staticMethodReflection, StaticCall $node, TypeSpecifierContext $context): bool
     {
-        return $staticMethodReflection->getName() === 'bool' && $context->truthy() && isset($node->getArgs()[0]);
+        return match ($staticMethodReflection->getName()) {
+            'bool' => $context->truthy() && isset($node->getArgs()[0]),
+            'compare' => isset($node->getArgs()[2]),
+            default => false,
+        };
     }
 
     public function specifyTypes(MethodReflection $staticMethodReflection, StaticCall $node, Scope $scope, TypeSpecifierContext $context): SpecifiedTypes
     {
-        $argument = $node->getArgs()[0] ?? null;
-        if ($argument === null) {
+        $args = $node->getArgs();
+        if ($staticMethodReflection->getName() === 'bool') {
+            return isset($args[0]) ? $this->typeSpecifier->specifyTypesInCondition($scope, $args[0]->value, $context) : new SpecifiedTypes();
+        }
+
+        if (!isset($args[0], $args[1], $args[2])) {
             return new SpecifiedTypes();
         }
 
-        return $this->typeSpecifier->specifyTypesInCondition($scope, $argument->value, $context);
+        $left = $args[0]->value;
+        $right = $args[2]->value;
+        $operators = $scope->getType($args[1]->value)->getConstantStrings();
+        $operator = \count($operators) === 1 ? $operators[0]->getValue() : null;
+        $comparison = match ($operator) {
+            '==' => new Equal($left, $right),
+            '!=' => new NotEqual($left, $right),
+            '===' => new Identical($left, $right),
+            '!==' => new NotIdentical($left, $right),
+            '<' => new Smaller($left, $right),
+            '<=' => new SmallerOrEqual($left, $right),
+            '>' => new Greater($left, $right),
+            '>=' => new GreaterOrEqual($left, $right),
+            default => null,
+        };
+        if ($comparison === null) {
+            return new SpecifiedTypes();
+        }
+
+        if (\in_array($operator, ['===', '!=='], true) && ($this->convertedByFluid($scope->getType($left), $scope->getType($right)) || $this->convertedByFluid($scope->getType($right), $scope->getType($left)))) {
+            return new SpecifiedTypes();
+        }
+
+        return $this->typeSpecifier->specifyTypesInCondition($scope, $comparison, $context);
+    }
+
+    /**
+     * Whether Fluid's conversion of the operand (BooleanParser::convertNodeToBoolean()) can make a
+     * strict comparison with the other side come out differently than on the raw value
+     */
+    private function convertedByFluid(Type $operand, Type $other): bool
+    {
+        $countable = !(new ObjectType(\Countable::class))->isSuperTypeOf($operand)->no() && !$other->isBoolean()->no();
+        $unsafeHtml = !(new ObjectType(UnsafeHTML::class))->isSuperTypeOf($operand)->no() && !$other->isString()->no();
+        return $countable || $unsafeHtml;
     }
 
     public function setTypeSpecifier(TypeSpecifier $typeSpecifier): void

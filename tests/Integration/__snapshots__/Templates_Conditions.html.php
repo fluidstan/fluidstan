@@ -63,59 +63,59 @@ function fluidstan_template_HASH(): void
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $label, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     }
     // fluid:15
-    if ($item == $other) {
+    if (\FluidStan\Runtime\F::compare($item, '==', $other)) {
         // fluid:15
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     }
     // fluid:16
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     // fluid:17
-    if ($label == 'abc') {
+    if (\FluidStan\Runtime\F::compare($label, '==', 'abc')) {
         // fluid:17
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', 1, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:18
-    if ('abc' == $label) {
+    if (\FluidStan\Runtime\F::compare('abc', '==', $label)) {
         // fluid:18
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', 1, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:19
-    if ($label != 'abc') {
+    if (\FluidStan\Runtime\F::compare($label, '!=', 'abc')) {
         // fluid:19
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', 1, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:20
-    if ($label === 'abc') {
+    if (\FluidStan\Runtime\F::compare($label, '===', 'abc')) {
         // fluid:20
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', 1, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:21
-    if ($count > 3) {
+    if (\FluidStan\Runtime\F::compare($count, '>', 3)) {
         // fluid:21
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', 'x', 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:22
-    if ($count == 3) {
+    if (\FluidStan\Runtime\F::compare($count, '==', 3)) {
         // fluid:22
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', 'x', 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:23
-    if ($count == 0) {
+    if (\FluidStan\Runtime\F::compare($count, '==', 0)) {
         // fluid:23
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', 'x', 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:24
-    if ($label == 'abc' && $count >= 1) {
+    if (\FluidStan\Runtime\F::compare($label, '==', 'abc') && \FluidStan\Runtime\F::compare($count, '>=', 1)) {
         // fluid:24
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:25
-    if ($label == 'abc' || $count == 3) {
+    if (\FluidStan\Runtime\F::compare($label, '==', 'abc') || \FluidStan\Runtime\F::compare($count, '==', 3)) {
         // fluid:25
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', $count, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
     // fluid:26
-    if ($label == "abc") {
+    if (\FluidStan\Runtime\F::compare($label, '==', "abc")) {
         // fluid:26
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.typed', ['text' => \FluidStan\Runtime\F::arg('text', $label, 'scalar|\Stringable', true, 'fs:atom.typed'), 'count' => \FluidStan\Runtime\F::arg('count', 1, 'scalar', true, 'fs:atom.typed'), 'ratio' => \FluidStan\Runtime\F::arg('ratio', 1, 'scalar', true, 'fs:atom.typed'), 'flag' => \FluidStan\Runtime\F::arg('flag', \FluidStan\Runtime\F::bool(true), 'bool', true, 'fs:atom.typed'), 'anything' => \FluidStan\Runtime\F::arg('anything', '', 'mixed', true, 'fs:atom.typed'), 'when' => \FluidStan\Runtime\F::arg('when', $d, '\DateTime', true, 'fs:atom.typed')]));
     }
@@ -125,7 +125,7 @@ function fluidstan_template_HASH(): void
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     }
     // fluid:28
-    if (\FluidStan\Runtime\F::bool($item) && \FluidStan\Runtime\F::get($item, 'title') == 'x') {
+    if (\FluidStan\Runtime\F::bool($item) && \FluidStan\Runtime\F::compare(\FluidStan\Runtime\F::get($item, 'title'), '==', 'x')) {
         // fluid:28
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     }

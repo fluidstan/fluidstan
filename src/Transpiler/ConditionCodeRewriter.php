@@ -34,11 +34,12 @@ use TYPO3Fluid\Fluid\Core\Parser\BooleanParser;
 
 /**
  * Turns the PHP code Fluid's BooleanParser compiles for a condition into analysable code: the
- * `$context["nodeN"]` placeholders become the operand expressions, and the truthiness conversion
+ * `$context["nodeN"]` placeholders become the operand expressions, the truthiness conversion
  * `BooleanParser::convertNodeToBoolean()` becomes `F::bool()` where the operand is used as a
- * boolean. Inside a comparison or arithmetic Fluid's conversion returns the value itself (only a
- * Countable becomes its count), so there the operand is used as is. Requires a
- * ParentConnectingVisitor to run first.
+ * boolean, and a comparison becomes `F::compare()` over the operands. Inside a comparison Fluid's
+ * conversion returns the value itself, except that a Countable becomes a bool and UnsafeHTML a
+ * string; the operand is passed as is, and the PHPStan extension keeps that in mind when it
+ * narrows. Requires a ParentConnectingVisitor to run first.
  */
 final class ConditionCodeRewriter extends NodeVisitorAbstract
 {
@@ -75,11 +76,31 @@ final class ConditionCodeRewriter extends NodeVisitorAbstract
         }
 
         return $expression instanceof StaticCall && $expression->class instanceof Name && $expression->class->toString() === F::class
-            && $expression->name instanceof Identifier && $expression->name->toString() === 'bool';
+            && $expression->name instanceof Identifier && \in_array($expression->name->toString(), ['bool', 'compare'], true);
+    }
+
+    private function comparator(Node $node): ?string
+    {
+        return match (true) {
+            $node instanceof Equal => '==',
+            $node instanceof NotEqual => '!=',
+            $node instanceof Identical => '===',
+            $node instanceof NotIdentical => '!==',
+            $node instanceof Greater => '>',
+            $node instanceof GreaterOrEqual => '>=',
+            $node instanceof Smaller => '<',
+            $node instanceof SmallerOrEqual => '<=',
+            default => null,
+        };
     }
 
     public function leaveNode(Node $node): ?Node
     {
+        $comparator = $this->comparator($node);
+        if ($comparator !== null && $node instanceof BinaryOp) {
+            return new StaticCall(new FullyQualified(F::class), 'compare', [new Arg($node->left), new Arg(new String_($comparator)), new Arg($node->right)]);
+        }
+
         if ($node instanceof ArrayDimFetch && $node->var instanceof Variable && $node->var->name === 'context' && $node->dim instanceof String_) {
             $operand = $this->operands[$node->dim->value] ?? null;
             if ($operand === null) {

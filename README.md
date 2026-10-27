@@ -151,8 +151,10 @@ What does **not** narrow, on purpose:
 - the operands of `||`
 - a condition on a property path, `{item.title}`, says nothing about `item` itself
 - the loose comparisons `==` and `!=`, even against a literal: `{label} == 'abc'` leaves `label` as
-  `string|null`. The condition is a real PHP `==` in the generated code, and PHPStan is deliberately
-  cautious with loose comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP.
+  `string|null`. Fluid applies the PHP operator, and PHPStan is deliberately cautious with loose
+  comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP, except that a
+  strict comparison of a `Countable` with a bool or of `UnsafeHTML` with a string narrows nothing,
+  because Fluid compares the count and the string there
 
 Conditions are not re-implemented: the PHP code Fluid's own `BooleanParser` compiles for them is
 reused with the operands substituted, so grammar, precedence and comparison semantics are Fluid's.
