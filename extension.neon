@@ -9,6 +9,10 @@ services:
         class: FluidStan\PhpStan\FReturnTypeExtension
         tags:
             - phpstan.broker.dynamicStaticMethodReturnTypeExtension
+    -
+        class: FluidStan\PhpStan\ConditionTypeSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.staticMethodTypeSpecifyingExtension
 
 rules:
     - FluidStan\PhpStan\Rules\PropertyAccessRule

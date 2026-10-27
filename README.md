@@ -44,6 +44,8 @@ It reports:
   and its use in [`ViewHelperInvoker`](https://github.com/TYPO3/Fluid/blob/main/src/Core/ViewHelper/ViewHelperInvoker.php).
 - non-numeric operands in `{a + b}`
 - undefined variables in components (their scope is closed)
+- all of that with the knowledge that a value checked by `f:if` is not null, false or empty inside
+  the condition (see "Conditions" below for what narrows and what does not)
 - unknown ViewHelpers, unknown or missing arguments, syntax errors (Fluid's parser), unknown component
   slots, `f:render` of undefined sections, deprecated ViewHelper usage
 
@@ -60,7 +62,6 @@ validation; on Fluid 4, whose runtime is lenient, they report what would fail af
 - Layouts, partials and sections analysed with the types of their call sites (sections are currently
   analysed with `mixed` variables)
 - Type inference from `assign()` / `assignMultiple()` calls in PHP code
-- Narrowing through `f:if` conditions
 - Opt-in strict mode for argument types that reports what Fluid silently casts, such as a
   non-numeric string passed to an `int` argument
 - Baseline file, result cache, more output formats
@@ -137,6 +138,25 @@ return types, so a collection that builds `['component' => ['class' => ..., 'pre
 `{component.class}` the type `string`. A `@return` array shape in the method's PHPDoc takes precedence,
 and `@var` in the template overrides both.
 
+## Conditions
+
+Inside `<f:if condition="{item}">` the type of `item` loses `null`, `false`, empty strings and
+zero, so passing it to an argument typed `Item` is fine there. The same holds for every operand of
+an `&&` chain, inside `f:then` and inside `f:else if="{other}"` for `other`.
+
+What does **not** narrow, on purpose:
+
+- the `f:else` branch and a negated check `!{item}`: Fluid treats the string `"false"` and an empty
+  `Countable` as false while PHP treats them as true, so FluidStan cannot claim the value is empty there
+- the operands of `||`
+- a condition on a property path, `{item.title}`, says nothing about `item` itself
+- the loose comparisons `==` and `!=`, even against a literal: `{label} == 'abc'` leaves `label` as
+  `string|null`. The condition is a real PHP `==` in the generated code, and PHPStan is deliberately
+  cautious with loose comparisons. `===`, `!==`, `<`, `<=`, `>` and `>=` narrow the way they do in PHP.
+
+Conditions are not re-implemented: the PHP code Fluid's own `BooleanParser` compiles for them is
+reused with the operands substituted, so grammar, precedence and comparison semantics are Fluid's.
+
 ## How it works
 
 1. Templates are parsed with Fluid's own `TemplateParser`, configured with the real ViewHelper
@@ -173,6 +193,8 @@ the transpiler. When Fluid changes one of these, FluidStan must follow:
 | Fragment to slot mapping | `ComponentAdapter` (private helpers) |
 | Argument parsing with non-fatal validation | `TemplateParser::parseArguments()` and `abortIfRequiredArgumentsAreMissing()` |
 | Iteration variable keys | `ForViewHelper` |
+| Truthiness of conditions | `BooleanNode::convertToBoolean()` |
+| Condition grammar, precedence and comparisons | `BooleanParser::compile()`, whose PHP code is reused with the operands substituted |
 | Component names from template files (Fluid 4 only) | `AbstractComponentCollection::getAvailableComponents()` (Fluid 5) |
 
 Candidates for upstream contributions that would remove mirrored code: source positions on syntax

@@ -80,9 +80,18 @@ final class F
     }
 
     /**
-     * A Fluid boolean expression; all operands are converted with Fluid's truthiness rules.
+     * A single value as a condition, converted with Fluid's truthiness rules; the PHPStan extension
+     * narrows the value in the true branch.
      */
-    public static function bool(mixed ...$operands): bool
+    public static function bool(mixed $value): bool
+    {
+        return false;
+    }
+
+    /**
+     * A condition whose compiled form could not be used: its operands are checked, its outcome is unknown.
+     */
+    public static function condition(mixed ...$operands): bool
     {
         return false;
     }

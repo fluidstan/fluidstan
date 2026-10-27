@@ -89,11 +89,11 @@ function fluidstan_template_HASH(): void
         if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active'))) {
             // fluid:11
             \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($item, 'title'));
-        } elseif (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'price'))) {
+        } elseif (\FluidStan\Runtime\F::get($item, 'price') > 10) {
         } else {
         }
         // fluid:15
-        if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'tags'), \FluidStan\Runtime\F::get($item, 'price'))) {
+        if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'tags')) && \FluidStan\Runtime\F::get($item, 'price') == 5) {
         }
         // fluid:16
         if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active'))) {
@@ -161,7 +161,7 @@ function fluidstan_template_HASH(): void
             \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, [], 'f:count'));
         }
         // fluid:28
-        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active')) ? \FluidStan\Runtime\F::get($item, 'title') : 'untitled');
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::condition(\FluidStan\Runtime\F::get($item, 'active')) ? \FluidStan\Runtime\F::get($item, 'title') : 'untitled');
         // fluid:29
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::math(\FluidStan\Runtime\F::get($item, 'price'), 1));
         // fluid:29

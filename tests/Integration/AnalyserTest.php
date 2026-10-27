@@ -81,8 +81,31 @@ final class AnalyserTest extends TestCase
             'Arguments.html:9 fluid.parser',
             'Arguments.html:9 fluid.parser',
             'Arguments.html:9 fluid.parser',
+            // a nullable value is not null inside f:if, in && chains, in f:else if, after === and
+            // after a size comparison; it stays nullable in the else branch, after ||, behind !,
+            // in a condition on a property path and after == (PHPStan is cautious with loose equality)
+            'Conditions.html:8 fluidstan.argument.type',
+            'Conditions.html:10 fluidstan.argument.type',
+            'Conditions.html:12 fluidstan.argument.type',
+            'Conditions.html:13 fluidstan.argument.type',
+            'Conditions.html:14 fluidstan.argument.type',
+            'Conditions.html:14 fluidstan.argument.type',
+            'Conditions.html:15 fluidstan.argument.type',
+            'Conditions.html:16 fluidstan.argument.type',
+            'Conditions.html:16 fluidstan.argument.type',
+            'Conditions.html:17 fluidstan.argument.type',
+            'Conditions.html:18 fluidstan.argument.type',
+            'Conditions.html:19 fluidstan.argument.type',
+            'Conditions.html:22 fluidstan.argument.type',
+            'Conditions.html:23 fluidstan.argument.type',
+            'Conditions.html:24 fluidstan.argument.type',
+            'Conditions.html:25 fluidstan.argument.type',
+            'Conditions.html:25 fluidstan.argument.type',
+            'Conditions.html:26 fluidstan.argument.type',
+            'Conditions.html:27 fluidstan.argument.type',
+            'Conditions.html:29 fluidstan.argument.type',
             'Plain.html:2 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(9, $result->templateCount);
+        $this->assertSame(10, $result->templateCount);
     }
 }

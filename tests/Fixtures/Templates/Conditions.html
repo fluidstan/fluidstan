@@ -1,0 +1,30 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" xmlns:fs="http://typo3.org/ns/FluidStan/Tests/Fixtures/Components/ComponentCollection" data-namespace-typo3-fluid="true">
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item|null item
+    @var FluidStan\Tests\Fixtures\Model\Item|null other
+    @var string|null label
+    @var int|null count
+</f:comment>
+<fs:atom.price item="{item}" />
+<f:if condition="{item}"><fs:atom.price item="{item}" /></f:if>
+<f:if condition="{item}"><f:then><fs:atom.price item="{item}" /></f:then><f:else><fs:atom.price item="{item}" /></f:else></f:if>
+<f:if condition="{item} && {other}"><fs:atom.price item="{item}" /><fs:atom.price item="{other}" /></f:if>
+<f:if condition="{item} || {other}"><fs:atom.price item="{item}" /><fs:atom.price item="{other}" /></f:if>
+<f:if condition="!{item}"><fs:atom.price item="{item}" /></f:if>
+<f:if condition="!({item} || {other}) && {label}"><fs:atom.price item="{item}" /><fs:atom.price item="{other}" /><fs:atom.price item="{label}" /></f:if>
+<f:if condition="{item} == {other}"><fs:atom.price item="{item}" /></f:if>
+<fs:atom.typed text="{label}" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" />
+<f:if condition="{label} == 'abc'"><fs:atom.typed text="{label}" count="1" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="'abc' == {label}"><fs:atom.typed text="{label}" count="1" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{label} != 'abc'"><fs:atom.typed text="{label}" count="1" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{label} === 'abc'"><fs:atom.typed text="{label}" count="1" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{count} > 3"><fs:atom.typed text="x" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{count} == 3"><fs:atom.typed text="x" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{count} == 0"><fs:atom.typed text="x" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{label} == 'abc' && {count} >= 1"><fs:atom.typed text="{label}" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{label} == 'abc' || {count} == 3"><fs:atom.typed text="{label}" count="{count}" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{label} == \"abc\""><fs:atom.typed text="{label}" count="1" ratio="1" flag="{true}" anything="" when="{d}" /></f:if>
+<f:if condition="{item.title}"><fs:atom.price item="{item}" /></f:if>
+<f:if condition="{item} && {item.title} == 'x'"><fs:atom.price item="{item}" /></f:if>
+<f:if condition="{item}"><f:else if="{other}"><fs:atom.price item="{item}" /><fs:atom.price item="{other}" /></f:else></f:if>
+</html>
