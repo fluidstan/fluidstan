@@ -10,6 +10,8 @@ declare (strict_types=1);
  */
 function fluidstan_template_HASH($item, $label = 'Price', $tags = null): void
 {
+    // fluid:1
+    $total = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.price', 'total', true);
     // fluid:7
     \FluidStan\Runtime\F::output($label);
     // fluid:7

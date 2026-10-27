@@ -6,6 +6,8 @@ declare (strict_types=1);
 function fluidstan_template_HASH(): void
 {
     // fluid:1
+    $settings = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.logo', 'settings', true);
+    // fluid:1
     $settings = \FluidStan\Runtime\F::variable('settings');
     // fluid:2
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.logo', 'component'), 'class'));

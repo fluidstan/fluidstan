@@ -1,0 +1,8 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="flag" type="bool" />
+<f:argument name="local" type="FluidStan\Tests\Fixtures\Scope\Local" />
+<f:argument name="items" type="FluidStan\Tests\Fixtures\Scope\Local[]" />
+<f:argument name="others" type="FluidStan\Tests\Fixtures\Scope\Provided[]" />
+<f:for each="{items}" as="item"><f:variable name="w" value="{item}" /></f:for>
+A:[{w.fromCollection}|{w.fromLocal}]
+</html>

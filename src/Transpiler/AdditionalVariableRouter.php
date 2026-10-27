@@ -6,11 +6,11 @@ namespace FluidStan\Transpiler;
 
 use FluidStan\Fluid\ComponentTemplate;
 use FluidStan\Runtime\F;
+use PhpParser\Comment;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Assign;
-use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\ConstFetch;
@@ -20,23 +20,22 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
-use PhpParser\Node\Stmt\If_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\NodeVisitorAbstract;
 
 /**
- * In a component, a variable that is read before it is assigned and is not an argument can only
- * come from the collection's getAdditionalVariables(). Such reads go through the facade, so the
- * PHPStan extension resolves the type from that method and reports what the collection does not
- * provide.
+ * In a component, a variable that is not an argument starts out with the value the collection's
+ * getAdditionalVariables() provides, or none. The PHPStan extension resolves that from the method.
  *
- * Statements are walked in evaluation order with Fluid's scoping: a variable assigned on some
- * paths of a condition keeps the local value there and the collection's elsewhere, loop variables
- * are restored when the loop ends, and section closures have their own preamble and scope.
+ * A variable the template assigns somewhere (f:variable) is initialised with that value at the
+ * start, so PHPStan's own flow analysis tells the local from the provided value in every branch
+ * and loop iteration, as Fluid's variable container would. A variable that is only read goes
+ * through the facade at each read, which also reports what the collection does not provide.
+ * Loop variables shadow a variable for the loop only: Fluid backs them up and restores them.
+ * Section closures have their own preamble and scope and are left alone.
  */
 final class AdditionalVariableRouter extends NodeVisitorAbstract
 {
@@ -46,17 +45,13 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
     /** Attribute on an Assign inside a loop body whose variable Fluid restores when the loop ends */
     public const LOOP_ALIAS = 'loopAlias';
 
-    /** @var array<string, string> PHP name => Fluid name of assigned variables */
-    private array $fluidNames = [];
+    /** @var array<int, array{list<Stmt>, list<Stmt>}> backup and restore statements around a loop, by object id */
+    private array $surroundings = [];
 
-    /** @var list<array<string, true>> loop variables of the open loops, innermost last */
-    private array $loopAliases = [];
-
-    /** @var array<int, list<Stmt>> statements to append after a node, by object id */
-    private array $joins = [];
+    private int $loops = 0;
 
     /**
-     * @param array<string, true> $assigned PHP variable names that are assigned before the body, such as the arguments
+     * @param array<string, true> $assigned PHP variable names that have a value before the body, such as the arguments
      */
     public function __construct(private readonly ComponentTemplate $component, private array $assigned) {}
 
@@ -66,14 +61,15 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
      */
     public function route(array $statements): array
     {
-        $routed = [];
-        foreach ((new NodeTraverser($this))->traverse($statements) as $node) {
-            if ($node instanceof Stmt) {
-                $routed[] = $node;
-            }
+        $preamble = [];
+        foreach (array_diff_key($this->scanAssignments($statements), $this->assigned) as $phpName => $fluidName) {
+            $statement = new Expression(new Assign(new Variable($phpName), $this->lookup($fluidName, [], true)));
+            $statement->setAttribute('comments', [new Comment(GeneratedFile::LINE_MARKER . '1')]);
+            $preamble[] = $statement;
+            $this->assigned[$phpName] = true;
         }
 
-        return $routed;
+        return [...$preamble, ...$this->traverse($statements)];
     }
 
     public function enterNode(Node $node): int|Node|null
@@ -90,12 +86,8 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
         if ($node instanceof Assign) {
             // The right-hand side is evaluated before the variable exists
             $node->expr = $this->routeExpression($node->expr);
-            $this->markAssigned($node->var, $node->getAttribute(self::LOOP_ALIAS) === true);
+            $this->markAssigned($node->var);
             return NodeVisitor::DONT_TRAVERSE_CHILDREN;
-        }
-
-        if ($node instanceof If_) {
-            return $this->enterIf($node);
         }
 
         if ($node instanceof Foreach_) {
@@ -110,99 +102,134 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node): ?array
     {
-        $joins = $this->joins[spl_object_id($node)] ?? null;
-        if ($joins === null) {
+        $surroundings = $this->surroundings[spl_object_id($node)] ?? null;
+        if ($surroundings === null) {
             return null;
         }
 
-        unset($this->joins[spl_object_id($node)]);
-        return [$node, ...$joins];
-    }
-
-    private function enterIf(If_ $if): int
-    {
-        $if->cond = $this->routeExpression($if->cond);
-        $before = $this->assigned;
-        $paths = [];
-        $if->stmts = $this->routePath($if->stmts, $before, $paths);
-        foreach ($if->elseifs as $elseIf) {
-            $this->assigned = $before;
-            $elseIf->cond = $this->routeExpression($elseIf->cond);
-            $elseIf->stmts = $this->routePath($elseIf->stmts, $before, $paths);
-        }
-
-        if ($if->else instanceof Else_) {
-            $if->else->stmts = $this->routePath($if->else->stmts, $before, $paths);
-        } else {
-            // No branch may apply
-            $paths[] = $before;
-        }
-
-        $this->join($if, $paths);
-        return NodeVisitor::DONT_TRAVERSE_CHILDREN;
+        unset($this->surroundings[spl_object_id($node)]);
+        [$before, $after] = $surroundings;
+        return [...$before, $node, ...$after];
     }
 
     private function enterLoop(Foreach_ $loop): int
     {
         $loop->expr = $this->routeExpression($loop->expr);
         $before = $this->assigned;
-        $this->loopAliases[] = [];
-        $this->markAssigned($loop->valueVar, true);
-        $this->markAssigned($loop->keyVar, true);
-        $loop->stmts = $this->route(array_values($loop->stmts));
-        $aliases = array_pop($this->loopAliases) ?? [];
+        $aliases = $this->scanLoopAliases($loop->stmts);
+        foreach ([$loop->valueVar, $loop->keyVar] as $target) {
+            if ($target instanceof Variable && \is_string($target->name)) {
+                $aliases[$target->name] = true;
+            }
+        }
 
-        // Fluid restores the loop variables when the loop ends, and the body may not have run at all
-        $afterBody = array_merge($before, array_diff_key($this->assigned, $aliases));
-        $this->join($loop, [$before, $afterBody]);
+        $pre = [];
+        $post = [];
+        ++$this->loops;
+        foreach (array_keys(array_intersect_key($aliases, $before)) as $name) {
+            // Fluid backs up a variable the loop shadows and restores it when the loop ends
+            $backup = new Variable(\sprintf('__backup%d_%s', $this->loops, $name));
+            $pre[] = new Expression(new Assign($backup, new Variable($name)));
+            $post[] = new Expression(new Assign(new Variable($name), $backup));
+        }
+
+        $this->markAssigned($loop->valueVar);
+        $this->markAssigned($loop->keyVar);
+        $loop->stmts = $this->traverse(array_values($loop->stmts));
+
+        // Loop variables that did not exist before the loop are gone again
+        $this->assigned = array_diff_key($this->assigned, array_diff_key($aliases, $before));
+        foreach ([...$pre, ...$post] as $statement) {
+            $statement->setAttribute('comments', $loop->getComments());
+        }
+
+        $this->surroundings[spl_object_id($loop)] = [$pre, $post];
         return NodeVisitor::DONT_TRAVERSE_CHILDREN;
     }
 
     /**
+     * Variables the statements assign persistently (f:variable), at any depth except inside sections.
+     *
      * @param array<Stmt> $statements
-     * @param array<string, true> $before
-     * @param list<array<string, true>> $paths
-     * @return list<Stmt>
+     * @return array<string, string> PHP name => Fluid name
      */
-    private function routePath(array $statements, array $before, array &$paths): array
+    private function scanAssignments(array $statements): array
     {
-        $this->assigned = $before;
-        $statements = $this->route(array_values($statements));
-        $paths[] = $this->assigned;
-        return $statements;
+        $assignments = [];
+        $this->scan($statements, static function (Assign $assign, int $loopDepth) use (&$assignments): void {
+            if ($assign->getAttribute(self::LOOP_ALIAS) === true || !$assign->var instanceof Variable || !\is_string($assign->var->name)) {
+                return;
+            }
+
+            $fluidName = $assign->var->getAttribute(self::FLUID_NAME);
+            $assignments[$assign->var->name] = \is_string($fluidName) ? $fluidName : $assign->var->name;
+        });
+
+        return $assignments;
     }
 
     /**
-     * A variable assigned on every path is assigned afterwards. One assigned on some paths keeps the
-     * local value there and the collection's value elsewhere: `$name = $name ?? lookup` after the
-     * node gives it that union and makes it assigned from here on.
+     * The loop's own aliases, such as its iteration variable; nested loops restore theirs themselves.
      *
-     * @param list<array<string, true>> $paths the variables assigned at the end of each path
+     * @param array<Stmt> $statements
+     * @return array<string, true>
      */
-    private function join(Node $node, array $paths): void
+    private function scanLoopAliases(array $statements): array
     {
-        $everywhere = array_intersect_key(...$paths);
-        $somewhere = array_merge(...$paths);
-        $this->assigned = $everywhere;
+        $aliases = [];
+        $this->scan($statements, static function (Assign $assign, int $loopDepth) use (&$aliases): void {
+            if ($loopDepth === 0 && $assign->getAttribute(self::LOOP_ALIAS) === true && $assign->var instanceof Variable && \is_string($assign->var->name)) {
+                $aliases[$assign->var->name] = true;
+            }
+        });
 
-        $joins = [];
-        foreach (array_keys(array_diff_key($somewhere, $everywhere)) as $name) {
-            $lookup = $this->lookup($this->fluidNames[$name] ?? $name, [], true);
-            $join = new Expression(new Assign(new Variable($name), new Coalesce(new Variable($name), $lookup)));
-            // Reported at the line of the condition or loop
-            $join->setAttribute('comments', $node->getComments());
-            $joins[] = $join;
-            $this->assigned[$name] = true;
-        }
+        return $aliases;
+    }
 
-        if ($joins !== []) {
-            $this->joins[spl_object_id($node)] = $joins;
-        }
+    /**
+     * @param array<Stmt> $statements
+     * @param callable(Assign, int): void $onAssign called with the nesting depth in loops
+     */
+    private function scan(array $statements, callable $onAssign): void
+    {
+        $visitor = new class ($onAssign) extends NodeVisitorAbstract {
+            private int $loopDepth = 0;
+
+            /**
+             * @param callable(Assign, int): void $onAssign
+             */
+            public function __construct(private $onAssign) {}
+
+            public function enterNode(Node $node): ?int
+            {
+                if ($node instanceof Closure) {
+                    return NodeVisitor::DONT_TRAVERSE_CHILDREN;
+                }
+
+                if ($node instanceof Foreach_) {
+                    ++$this->loopDepth;
+                } elseif ($node instanceof Assign) {
+                    ($this->onAssign)($node, $this->loopDepth);
+                }
+
+                return null;
+            }
+
+            public function leaveNode(Node $node): null
+            {
+                if ($node instanceof Foreach_) {
+                    --$this->loopDepth;
+                }
+
+                return null;
+            }
+        };
+        (new NodeTraverser($visitor))->traverse(array_values($statements));
     }
 
     /**
      * @param array<string, mixed> $attributes
-     * @param bool $maybeLocal the variable may have been assigned on another path; the collection not providing it is no error then
+     * @param bool $maybeLocal the variable is assigned locally somewhere; the collection not providing it is no error then
      */
     private function lookup(string $fluidName, array $attributes, bool $maybeLocal = false): StaticCall
     {
@@ -218,23 +245,32 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
         return new StaticCall(new FullyQualified(F::class), 'additionalVariable', $arguments, $attributes);
     }
 
+    /**
+     * @param list<Node> $nodes
+     * @return list<Stmt>
+     */
+    private function traverse(array $nodes): array
+    {
+        $statements = [];
+        foreach ((new NodeTraverser($this))->traverse($nodes) as $node) {
+            if ($node instanceof Stmt) {
+                $statements[] = $node;
+            }
+        }
+
+        return $statements;
+    }
+
     private function routeExpression(Expr $expression): Expr
     {
         $node = (new NodeTraverser($this))->traverse([$expression])[0] ?? $expression;
         return $node instanceof Expr ? $node : $expression;
     }
 
-    private function markAssigned(?Node $target, bool $loopAlias): void
+    private function markAssigned(?Node $target): void
     {
-        if (!$target instanceof Variable || !\is_string($target->name)) {
-            return;
-        }
-
-        $this->assigned[$target->name] = true;
-        $fluidName = $target->getAttribute(self::FLUID_NAME);
-        $this->fluidNames[$target->name] = \is_string($fluidName) ? $fluidName : $target->name;
-        if ($loopAlias && $this->loopAliases !== []) {
-            $this->loopAliases[array_key_last($this->loopAliases)][$target->name] = true;
+        if ($target instanceof Variable && \is_string($target->name)) {
+            $this->assigned[$target->name] = true;
         }
     }
 }

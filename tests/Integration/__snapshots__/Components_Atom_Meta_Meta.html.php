@@ -8,6 +8,14 @@ declare (strict_types=1);
  */
 function fluidstan_template_HASH($title): void
 {
+    // fluid:1
+    $version = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'version', true);
+    // fluid:1
+    $__section_Extra = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', '__section_Extra', true);
+    // fluid:1
+    $author = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author', true);
+    // fluid:1
+    $local = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'local', true);
     // fluid:4
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'component'), 'class'));
     // fluid:4
@@ -17,22 +25,22 @@ function fluidstan_template_HASH($title): void
     // fluid:5
     \FluidStan\Runtime\F::output($title);
     // fluid:5
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'version'));
+    \FluidStan\Runtime\F::output($version);
     // fluid:6
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'component'), 'nonexistent'));
     // fluid:7
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'component'), 'class'), 'length'));
     // fluid:8
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author'), 'title'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($author, 'title'));
     // fluid:8
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author'), 'nonexistent'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($author, 'nonexistent'));
     // fluid:9
     foreach (\FluidStan\Runtime\F::each(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'component'), 'flags')) as $flag) {
         // fluid:9
         \FluidStan\Runtime\F::output($flag);
     }
     // fluid:10
-    foreach (\FluidStan\Runtime\F::each(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'version')) as $digit) {
+    foreach (\FluidStan\Runtime\F::each($version) as $digit) {
         // fluid:10
         \FluidStan\Runtime\F::output($digit);
     }
@@ -44,7 +52,7 @@ function fluidstan_template_HASH($title): void
     // fluid:13
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'this'));
     // fluid:14
-    $version = \FluidStan\Runtime\F::math(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'version'), 1);
+    $version = \FluidStan\Runtime\F::math($version, 1);
     // fluid:15
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($version, 'digits'));
     // fluid:16
@@ -60,10 +68,8 @@ function fluidstan_template_HASH($title): void
         $author = 'x';
     } else {
         // fluid:17
-        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author'), 'inElse'));
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($author, 'inElse'));
     }
-    // fluid:17
-    $author = $author ?? \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'author', true);
     // fluid:18
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($author, 'afterIf'));
     // fluid:19
@@ -84,8 +90,6 @@ function fluidstan_template_HASH($title): void
         // fluid:21
         $local = 1;
     }
-    // fluid:21
-    $local = $local ?? \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.meta', 'local', true);
     // fluid:22
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($local, 'afterIf'));
 }
