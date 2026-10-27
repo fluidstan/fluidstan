@@ -9,6 +9,7 @@ use FluidStan\Diagnostics\Diagnostic;
 use FluidStan\Diagnostics\DiagnosticCollection;
 use FluidStan\Environment\EnvironmentInterface;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContext;
+use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolverDelegateInterface;
 
 /**
  * Creates Fluid rendering contexts configured for analysis and parses templates with them.
@@ -19,8 +20,11 @@ final class FluidEnvironment
 
     private ?EnvironmentInterface $environment = null;
 
-    /** @var array<string, list<string>> */
+    /** @var array<string, list<string>|null> */
     private array $namespaces;
+
+    /** @var array<string, ViewHelperResolverDelegateInterface> */
+    private array $resolverDelegates = [];
 
     private ?ComponentRegistry $components = null;
 
@@ -54,6 +58,7 @@ final class FluidEnvironment
             $this->environment = new $class();
             $this->environment->boot($this->configuration);
             $this->namespaces = array_merge($this->namespaces, $this->environment->getNamespaces());
+            $this->resolverDelegates = $this->environment->getResolverDelegates();
         }
 
         $this->bootstrapped = true;
@@ -95,6 +100,7 @@ final class FluidEnvironment
         $renderingContext->setErrorHandler($errorHandler);
 
         $resolver = new AnalysisViewHelperResolver();
+        $resolver->setResolverDelegates($this->resolverDelegates);
         $resolver->setNamespaces($this->namespaces);
 
         $renderingContext->setViewHelperResolver($resolver);
@@ -118,7 +124,7 @@ final class FluidEnvironment
         }
 
         $diagnostics->merge($errorHandler->getDiagnostics());
-        $this->components ??= ComponentRegistry::fromNamespaces($this->namespaces, new AnalysisViewHelperResolver());
+        $this->components ??= ComponentRegistry::fromNamespaces($this->namespaces, $this->resolverDelegates, new AnalysisViewHelperResolver());
 
         return new ParsedTemplate($file, $source, $parsingState, $parser->getNodeLocations(), $diagnostics, $renderingContext, $this->components->find($file));
     }

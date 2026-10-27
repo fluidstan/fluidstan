@@ -6,6 +6,7 @@ namespace FluidStan\Fluid;
 
 use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperInterface;
 use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolver;
+use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolverDelegateInterface;
 
 /**
  * ViewHelpers are only instantiated to read their argument definitions. Frameworks inject
@@ -14,6 +15,25 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperResolver;
  */
 final class AnalysisViewHelperResolver extends ViewHelperResolver
 {
+    /** @var array<string, ViewHelperResolverDelegateInterface> */
+    private array $delegates = [];
+
+    /**
+     * Delegates built by the framework, keyed by the namespace string that refers to them; they take
+     * precedence over instantiating a class of that name (TYPO3's ViewHelperResolver gets them the same way).
+     *
+     * @param array<string, ViewHelperResolverDelegateInterface> $delegates
+     */
+    public function setResolverDelegates(array $delegates): void
+    {
+        $this->delegates = $delegates;
+    }
+
+    public function createResolverDelegateInstanceFromClassName(string $delegateClassName): ViewHelperResolverDelegateInterface
+    {
+        return $this->delegates[$delegateClassName] ?? parent::createResolverDelegateInstanceFromClassName($delegateClassName);
+    }
+
     public function createViewHelperInstanceFromClassName(string $viewHelperClassName): ViewHelperInterface
     {
         try {

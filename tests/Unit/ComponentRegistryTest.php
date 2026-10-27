@@ -19,7 +19,8 @@ final class ComponentRegistryTest extends TestCase
     public function testFindsComponentsOfConfiguredCollections(): void
     {
         $registry = ComponentRegistry::fromNamespaces(
-            ['f' => ['TYPO3Fluid\\Fluid\\ViewHelpers'], 'fs' => ['FluidStan\\Tests\\Does\\Not\\Exist', ComponentCollection::class]],
+            ['f' => ['TYPO3Fluid\\Fluid\\ViewHelpers'], 'fs' => ['FluidStan\\Tests\\Does\\Not\\Exist', ComponentCollection::class], 'ignored' => null],
+            [],
             new AnalysisViewHelperResolver(),
         );
 
@@ -30,6 +31,22 @@ final class ComponentRegistryTest extends TestCase
         $this->assertSame('atom.price', $registry->find(self::COMPONENTS . '/../Components/Atom/Price/Price.html')?->name);
         $this->assertNull($registry->find(__DIR__ . '/../Fixtures/Templates/Plain.html'));
         $this->assertNull($registry->find(self::COMPONENTS . '/ComponentCollection.php'));
+    }
+
+    public function testPrefersDelegatesTheFrameworkBuilt(): void
+    {
+        // TYPO3 14 configures collections without a class; their namespace string is not a class name
+        $collection = new ComponentCollection();
+        $registry = ComponentRegistry::fromNamespaces(
+            ['fs' => ['Vendor\\Site\\Components', ComponentCollection::class]],
+            ['Vendor\\Site\\Components' => $collection, ComponentCollection::class => $collection],
+            new AnalysisViewHelperResolver(),
+        );
+
+        $component = $registry->find(self::COMPONENTS . '/Atom/Price/Price.html');
+        $this->assertInstanceOf(ComponentTemplate::class, $component);
+        $this->assertSame('atom.price', $component->name);
+        $this->assertSame($collection, $component->collection);
     }
 
     public function testDerivesComponentNamesFromTemplateFilesWithoutComponentList(): void
