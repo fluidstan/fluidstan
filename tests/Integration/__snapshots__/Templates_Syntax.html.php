@@ -125,7 +125,7 @@ function fluidstan_template_HASH(): void
         // fluid:21
         $__scope1_first = $first;
         // fluid:21
-        $__scope1_total = $total;
+        $__scope2_total = $total;
         // fluid:21
         {
             // fluid:21
@@ -140,7 +140,7 @@ function fluidstan_template_HASH(): void
         // fluid:21
         $first = $__scope1_first;
         // fluid:21
-        $total = $__scope1_total;
+        $total = $__scope2_total;
         // fluid:22
         $label = \FluidStan\Runtime\F::get($item, 'title');
         // fluid:23
@@ -159,7 +159,7 @@ function fluidstan_template_HASH(): void
         // fluid:25
         \FluidStan\Runtime\F::output($captured);
         // fluid:26
-        $__scope2_cycled = $cycled;
+        $__scope3_cycled = $cycled;
         // fluid:26
         {
             // fluid:26
@@ -168,7 +168,7 @@ function fluidstan_template_HASH(): void
             \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($cycled, 'title'));
         }
         // fluid:26
-        $cycled = $__scope2_cycled;
+        $cycled = $__scope3_cycled;
         // fluid:27
         foreach (\FluidStan\Runtime\F::each($items) as $__grouped) {
             // fluid:27

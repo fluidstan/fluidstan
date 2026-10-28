@@ -446,14 +446,29 @@ final class TemplateTranspiler
 
         $pre = [];
         $post = [];
-        ++$this->scopes;
-        foreach (array_filter($names, fn(string $name): bool => isset($this->referencedRoots[$name])) as $name) {
-            $backup = new Variable(\sprintf('__scope%d_%s', $this->scopes, VariableNames::php($name)));
+        $restored = array_filter($names, fn(string $name): bool => isset($this->referencedRoots[$name]));
+        foreach ($restored as $name) {
+            $backup = $this->backupVariable($name);
             $pre[] = $this->mark(new Expression(new Assign($backup, $this->variable($name))), $line);
             $post[] = $this->mark(new Expression(new Assign($this->variable($name), $backup)), $line);
         }
 
         return [...$pre, $block, ...$post];
+    }
+
+    /**
+     * A variable for the backup of a scoped variable, numbered consecutively and skipping every name
+     * the template uses as a variable of its own. Fluid 5 rejects identifiers starting with "_", so
+     * there the names are free anyway; Fluid 4 does not.
+     */
+    private function backupVariable(string $name): Variable
+    {
+        $used = array_map(VariableNames::php(...), array_keys($this->referencedRoots));
+        do {
+            $backup = \sprintf('__scope%d_%s', ++$this->scopes, VariableNames::php($name));
+        } while (\in_array($backup, $used, true));
+
+        return new Variable($backup);
     }
 
     /**
