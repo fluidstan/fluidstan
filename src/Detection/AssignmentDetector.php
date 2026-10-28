@@ -7,6 +7,7 @@ namespace FluidStan\Detection;
 use FluidStan\Configuration\Configuration;
 use FluidStan\PhpStan\Rules\ViewHelperAssignmentRule;
 use FluidStan\Runner\PhpStanRunner;
+use FluidStan\Transpiler\ViewHelperAssignments;
 use Nette\Neon\Neon;
 
 /**
@@ -17,6 +18,9 @@ use Nette\Neon\Neon;
  */
 final readonly class AssignmentDetector
 {
+    /** Changes whenever the cached data changes shape */
+    private const FORMAT = '3';
+
     public function __construct(
         private Configuration $configuration,
         private ?string $autoloadFile,
@@ -25,7 +29,9 @@ final readonly class AssignmentDetector
 
     /**
      * @param list<string> $classes
-     * @return array<string, array<string, string>> declaring class => variable name or {argument} => PHPDoc type
+     * @return array<string, array<string, array{type: string, scope: string}>> declaring class => variable name or {argument} => assignment
+     *
+     * @phpstan-impure the result comes from the cache file when the ViewHelper files are unchanged
      */
     public function detect(array $classes): array
     {
@@ -35,7 +41,7 @@ final readonly class AssignmentDetector
         }
 
         $cacheFile = $this->configuration->tmpDir . '/viewhelper-assignments.json';
-        $key = sha1(implode("\n", array_map(static fn(string $file): string => $file . ':' . filemtime($file) . ':' . filesize($file), $files)));
+        $key = sha1(self::FORMAT . "\n" . implode("\n", array_map(static fn(string $file): string => $file . ':' . filemtime($file) . ':' . filesize($file), $files)));
         $cached = is_file($cacheFile) ? json_decode((string) file_get_contents($cacheFile), true) : null;
         if (\is_array($cached) && ($cached['key'] ?? null) === $key && \is_array($cached['assignments'] ?? null)) {
             return $this->stringMaps($cached['assignments']);
@@ -48,7 +54,7 @@ final readonly class AssignmentDetector
 
     /**
      * @param array<mixed> $value
-     * @return array<string, array<string, string>>
+     * @return array<string, array<string, array{type: string, scope: string}>>
      */
     private function stringMaps(array $value): array
     {
@@ -58,9 +64,9 @@ final readonly class AssignmentDetector
                 continue;
             }
 
-            foreach ($variables as $name => $type) {
-                if (\is_string($type)) {
-                    $maps[(string) $class][(string) $name] = $type;
+            foreach ($variables as $name => $assignment) {
+                if (\is_array($assignment) && \is_string($assignment['type'] ?? null) && \is_string($assignment['scope'] ?? null)) {
+                    $maps[(string) $class][(string) $name] = ['type' => $assignment['type'], 'scope' => $assignment['scope']];
                 }
             }
         }
@@ -70,7 +76,7 @@ final readonly class AssignmentDetector
 
     /**
      * @param list<string> $files
-     * @return array<string, array<string, string>>
+     * @return array<string, array<string, array{type: string, scope: string}>>
      */
     private function run(array $files): array
     {
@@ -102,13 +108,24 @@ final readonly class AssignmentDetector
                 continue;
             }
 
-            // Several assignments of the same variable: it holds one of the types
-            $types = $assignments[$payload['class']][$payload['name']] ?? [];
-            $types[$payload['type']] = true;
-            $assignments[$payload['class']][$payload['name']] = $types;
+            // Several assignments of the same variable: it holds one of the types; a narrower scope wins
+            $scope = \is_string($payload['scope'] ?? null) ? $payload['scope'] : ViewHelperAssignments::SCOPE_TEMPLATE;
+            $entry = $assignments[$payload['class']][$payload['name']] ?? ['types' => [], 'scope' => $scope];
+            $entry['types'][$payload['type']] = true;
+            if ($scope !== ViewHelperAssignments::SCOPE_TEMPLATE) {
+                $entry['scope'] = $scope;
+            }
+
+            $assignments[$payload['class']][$payload['name']] = $entry;
         }
 
-        return array_map(static fn(array $variables): array => array_map(static fn(array $types): string => implode('|', array_keys($types)), $variables), $assignments);
+        return array_map(
+            static fn(array $variables): array => array_map(
+                static fn(array $entry): array => ['type' => implode('|', array_keys($entry['types'])), 'scope' => $entry['scope']],
+                $variables,
+            ),
+            $assignments,
+        );
     }
 
     /**

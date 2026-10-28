@@ -152,6 +152,11 @@ reached on every path, after an early `return` or inside a condition, may leave 
 which in Fluid means `null`, so its type gets `|null`. The pass is cached by the ViewHelper files and
 only runs again when one of them changed.
 
+A ViewHelper may also give a variable to its children only, the way `f:alias` and `f:cycle` do. Both
+forms Fluid offers are detected and modelled as Fluid behaves: a `ScopedVariableProvider` around a
+`StandardVariableProvider` restores the previous value after the tag, while `add()`, `renderChildren()`
+and `remove()` deletes the variable for good, so it is `null` afterwards even if the collection provided it.
+
 Where detection cannot follow the code, the name is computed or the ViewHelper delegates to a service,
 or where it is more cautious than you know to be true, declare the assignment in `fluidstan.neon`:
 
@@ -163,6 +168,9 @@ parameters:
             '{target}': string
         My\Site\ViewHelpers\LoadProductViewHelper:
             product: My\Site\Domain\Model\Product
+        # a variable the children see only; scope "removed" when the ViewHelper deletes it afterwards
+        My\Site\ViewHelpers\WithProductViewHelper:
+            '{as}': { type: My\Site\Domain\Model\Product, scope: children }
 ```
 
 For your own ViewHelpers the same can live in the class docblock, where it is kept next to the code:
@@ -170,6 +178,7 @@ For your own ViewHelpers the same can live in the class docblock, where it is ke
 ```php
 /**
  * @fluidstan-assigns {target} string
+ * @fluidstan-assigns-to-children {as} My\Site\Domain\Model\Product
  */
 final class ClassBuilderViewHelper extends AbstractViewHelper
 ```

@@ -7,6 +7,7 @@ namespace FluidStan\Tests\Integration;
 use FluidStan\Analyser;
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Diagnostics\Diagnostic;
+use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -14,12 +15,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class AnalyserTest extends TestCase
 {
+    use TemporaryDirectory;
+
     public function testFixturesReportExpectedErrors(): void
     {
         $root = __DIR__ . '/../Fixtures';
-        // A temporary directory keeps generated code out of the source tree, also under mutation testing
-        $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', $root)
-            ->withTmpDir(sys_get_temp_dir() . '/fluidstan-test-' . getmypid());
+        $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', $root)->withTmpDir($this->tmpDir);
         $autoload = \dirname(__DIR__, 2) . '/vendor/autoload.php';
         $analyser = new Analyser($configuration, $autoload, \dirname($autoload) . '/bin/phpstan');
         $result = $analyser->analyse();
@@ -38,6 +39,11 @@ final class AnalyserTest extends TestCase
             'Assigned.html:13 fluidstan.property.unresolvable',
             'Assigned.html:14 fluidstan.property.unresolvable',
             'Assigned.html:14 fluidstan.property.unresolvable',
+            // variables a ViewHelper gives its children only, in both forms Fluid uses, are gone after the tag
+            'Assigned.html:16 fluidstan.property.unresolvable',
+            'Assigned.html:16 fluidstan.property.unresolvable',
+            'Assigned.html:17 variable.undefined',
+            'Assigned.html:17 variable.undefined',
             // a component without arguments still has its collection's variables
             'Logo.html:2 fluidstan.property.unresolvable',
             'Logo.html:2 variable.undefined',

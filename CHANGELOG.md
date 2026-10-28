@@ -12,7 +12,13 @@
   enough, the assignment can be declared in `fluidstan.neon` under `viewHelperAssignments` for any
   class, or with a `@fluidstan-assigns` tag in the ViewHelper's docblock; `{target}` names the variable
   after an argument of the call, with the argument's default. After the call the variable is local and
-  typed accordingly. Fluid's own assigning ViewHelpers were known already.
+  typed accordingly. A variable a ViewHelper gives its children only exists inside the tag: through a
+  `ScopedVariableProvider` the previous value is restored afterwards, with `remove()` after
+  `renderChildren()` the variable is gone for good, both as in Fluid; declared with `scope: children`
+  or `removed`, or `@fluidstan-assigns-to-children`. Fluid's own assigning
+  ViewHelpers were known already.
+- **`f:alias` and `f:cycle` variables** exist for their children only, as they do in Fluid; they were
+  treated as persistent before.
 
 ## 0.2.0
 

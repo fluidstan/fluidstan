@@ -14,7 +14,7 @@ final readonly class Configuration
      * @param list<string> $phpstanIncludes Additional PHPStan config files included into the generated config
      * @param array<string, mixed> $phpstanParameters Additional PHPStan parameters merged into the generated config
      * @param string|null $environment Class implementing FluidStan\Environment\EnvironmentInterface
-     * @param array<string, array<string, string>> $viewHelperAssignments ViewHelper class => variable name or {argument} => PHPDoc type
+     * @param array<string, array<string, array{type: string, scope: string}>> $viewHelperAssignments ViewHelper class => variable name or {argument} => type and scope
      */
     public function __construct(
         public string $rootDir,

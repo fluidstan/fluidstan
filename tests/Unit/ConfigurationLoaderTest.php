@@ -38,7 +38,7 @@ final class ConfigurationLoaderTest extends TestCase
             'tmpDir' => 'var/fluidstan',
             'environment' => 'My\\Environment',
             'phpstan' => ['binary' => 'bin/phpstan', 'includes' => ['phpstan.neon'], 'parameters' => ['checkFoo' => true]],
-            'viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => 'My\\Item', '{target}' => 'string']],
+            'viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => 'My\\Item', '{as}' => ['type' => 'string', 'scope' => 'children']]],
         ], '/project');
 
         $this->assertSame(['/project/Components', '/abs/Templates', 'EXT:site/Resources'], $configuration->paths);
@@ -50,7 +50,7 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame('/project/bin/phpstan', $configuration->phpstanBinary);
         $this->assertSame(['/project/phpstan.neon'], $configuration->phpstanIncludes);
         $this->assertSame(['checkFoo' => true], $configuration->phpstanParameters);
-        $this->assertSame(['My\\LoadViewHelper' => ['item' => 'My\\Item', '{target}' => 'string']], $configuration->viewHelperAssignments);
+        $this->assertSame(['My\\LoadViewHelper' => ['item' => ['type' => 'My\\Item', 'scope' => 'template'], '{as}' => ['type' => 'string', 'scope' => 'children']]], $configuration->viewHelperAssignments);
     }
 
     public function testLoadsNeonRelativeToTheConfigFile(): void
@@ -66,8 +66,8 @@ final class ConfigurationLoaderTest extends TestCase
     public function testViewHelperAssignmentTypesMustBeStrings(): void
     {
         $this->expectException(ConfigurationException::class);
-        $this->expectExceptionMessage('"viewHelperAssignments.My\\LoadViewHelper.item" must be a PHPDoc type.');
-        (new ConfigurationLoader())->fromParameters(['viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => ['nope']]]], '/project');
+        $this->expectExceptionMessage('"viewHelperAssignments.My\\LoadViewHelper.item" must be a PHPDoc type, or a map with "type" and a "scope" of "template", "children" or "removed".');
+        (new ConfigurationLoader())->fromParameters(['viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => ['type' => 'My\\Item', 'scope' => 'everywhere']]]], '/project');
     }
 
     public function testPhpStanLevelIsRejected(): void

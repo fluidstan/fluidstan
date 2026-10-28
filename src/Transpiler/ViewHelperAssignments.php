@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace FluidStan\Transpiler;
 
 /**
- * Which template variables a ViewHelper assigns when it is called, and their types. Fluid offers
- * no way to declare that, so it comes from three sources: what the detection pass found in the
- * ViewHelper's code, `@fluidstan-assigns` tags in the ViewHelper's class docblock, and the
- * "viewHelperAssignments" map in fluidstan.neon, each winning over the previous one.
+ * Which template variables a ViewHelper assigns when it is called, their types, and their scope:
+ * "template" for the rest of the template, "children" for the ViewHelper's children only with the
+ * previous value restored afterwards, "removed" for the children only with the variable gone
+ * afterwards, as add() followed by remove() leaves it. Fluid offers no way to
+ * declare that, so it comes from three sources: what the detection pass found in the ViewHelper's
+ * code, `@fluidstan-assigns` and `@fluidstan-assigns-to-children` tags in the ViewHelper's class
+ * docblock, and the "viewHelperAssignments" map in fluidstan.neon, each winning over the previous.
  *
  * A variable name is literal, or `{argument}` for the value of that argument at the call site,
  * with the argument's default when the call omits it.
@@ -17,12 +20,20 @@ final class ViewHelperAssignments
 {
     public const TAG = '@fluidstan-assigns';
 
-    /** @var array<string, array<string, string>> resolved per ViewHelper class */
+    public const CHILDREN_TAG = '@fluidstan-assigns-to-children';
+
+    public const SCOPE_TEMPLATE = 'template';
+
+    public const SCOPE_CHILDREN = 'children';
+
+    public const SCOPE_REMOVED = 'removed';
+
+    /** @var array<string, array<string, array{type: string, scope: string}>> resolved per ViewHelper class */
     private array $cache = [];
 
     /**
-     * @param array<string, array<string, string>> $configured ViewHelper class => variable name or {argument} => PHPDoc type
-     * @param array<string, array<string, string>> $detected the same, found in the ViewHelpers' code
+     * @param array<string, array<string, array{type: string, scope: string}>> $configured ViewHelper class => variable name or {argument} => assignment
+     * @param array<string, array<string, array{type: string, scope: string}>> $detected the same, found in the ViewHelpers' code
      */
     public function __construct(
         private readonly array $configured = [],
@@ -30,7 +41,7 @@ final class ViewHelperAssignments
     ) {}
 
     /**
-     * @return array<string, string> variable name or {argument} => PHPDoc type
+     * @return array<string, array{type: string, scope: string}> variable name or {argument} => PHPDoc type and scope
      */
     public function forViewHelper(string $viewHelperClass): array
     {
@@ -44,8 +55,8 @@ final class ViewHelperAssignments
     /**
      * The entries for the class and its ancestors
      *
-     * @param array<string, array<string, string>> $map
-     * @return array<string, string>
+     * @param array<string, array<string, array{type: string, scope: string}>> $map
+     * @return array<string, array{type: string, scope: string}>
      */
     private function inherited(string $viewHelperClass, array $map): array
     {
@@ -62,7 +73,7 @@ final class ViewHelperAssignments
     /**
      * The tags of the class and of its parents, which the class inherits.
      *
-     * @return array<string, string>
+     * @return array<string, array{type: string, scope: string}>
      */
     private function fromDocBlocks(string $viewHelperClass): array
     {
@@ -77,10 +88,10 @@ final class ViewHelperAssignments
                 continue;
             }
 
-            preg_match_all('/^\s*\*\s*' . preg_quote(self::TAG, '/') . '\s+(\S+)\s+(.+?)\s*$/m', $docComment, $matches, PREG_SET_ORDER);
-            foreach ($matches as [, $name, $type]) {
+            preg_match_all('/^\s*\*\s*(' . preg_quote(self::CHILDREN_TAG, '/') . '|' . preg_quote(self::TAG, '/') . ')\s+(\S+)\s+(.+?)\s*$/m', $docComment, $matches, PREG_SET_ORDER);
+            foreach ($matches as [, $tag, $name, $type]) {
                 // The class's own tag wins over an inherited one
-                $assignments[$name] ??= $type;
+                $assignments[$name] ??= ['type' => $type, 'scope' => $tag === self::CHILDREN_TAG ? self::SCOPE_CHILDREN : self::SCOPE_TEMPLATE];
             }
         }
 

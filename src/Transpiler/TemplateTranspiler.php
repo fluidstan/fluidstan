@@ -33,6 +33,7 @@ use PhpParser\Node\Scalar\Float_;
 use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Block;
 use PhpParser\Node\Stmt\Declare_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\ElseIf_;
@@ -374,7 +375,45 @@ final class TemplateTranspiler
         $arguments = $node->getArguments();
         $as = $this->constantString($arguments['as'] ?? null) ?? '__cycle';
         $statements = [$this->mark($this->assignVariable($as, $this->call('valueOf', [$this->expr($arguments['values'] ?? null)])), $line)];
-        return array_merge($statements, $this->emitBlock($node->getChildNodes()));
+        return [$this->scopedBlock([$as], $statements, $this->emitBlock($node->getChildNodes()), $line)];
+    }
+
+    /**
+     * An argument value without the wrapping Fluid adds: escaping, and a root node around a single node
+     */
+    private function unwrap(mixed $value): mixed
+    {
+        if ($value instanceof EscapingNode) {
+            return $this->unwrap($value->getNode());
+        }
+
+        if ($value instanceof RootNode && \count($value->getChildNodes()) === 1) {
+            $children = $value->getChildNodes();
+
+            return $this->unwrap(reset($children));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Statements with variables that exist for them only, as Fluid's ScopedVariableProvider gives
+     * them to the children of f:alias, f:cycle and scoping ViewHelpers.
+     *
+     * @param list<string> $names Fluid names of the scoped variables
+     * @param list<Stmt> $assignments
+     * @param list<Stmt> $children
+     */
+    private function scopedBlock(array $names, array $assignments, array $children, int $line): Stmt
+    {
+        foreach ($assignments as $assignment) {
+            if ($assignment instanceof Expression) {
+                $this->loopAlias($assignment);
+            }
+        }
+
+        $block = new Block([...$assignments, ...$children], [AdditionalVariableRouter::SCOPE => array_map(VariableNames::php(...), $names)]);
+        return $this->mark($block, $line);
     }
 
     /**
@@ -411,14 +450,16 @@ final class TemplateTranspiler
         $line = $this->lineOf($node);
         $arguments = $node->getArguments();
         $statements = [];
-        $map = $arguments['map'] ?? null;
+        $names = [];
+        $map = $this->unwrap($arguments['map'] ?? null);
         if ($map instanceof ArrayNode) {
             foreach ($this->arrayNodeItems($map) as $name => $value) {
+                $names[] = (string) $name;
                 $statements[] = $this->mark($this->assignVariable((string) $name, $this->expr($value)), $line);
             }
         }
 
-        return array_merge($statements, $this->emitBlock($node->getChildNodes()));
+        return [$this->scopedBlock($names, $statements, $this->emitBlock($node->getChildNodes()), $line)];
     }
 
     /**
@@ -456,24 +497,35 @@ final class TemplateTranspiler
     private function emitGenericViewHelperStatements(ViewHelperNode $node): array
     {
         $line = $this->lineOf($node);
+        [$scoped, $scopedNames, $persistent, $removed] = $this->assignedByViewHelper($node);
         // Fluid casts children to string only when there are several of them
-        $statements = $this->emitBlock($node->getChildNodes(), \count($node->getChildNodes()) === 1);
+        $children = $this->emitBlock($node->getChildNodes(), \count($node->getChildNodes()) === 1);
+        $statements = $scoped === [] ? $children : [$this->scopedBlock($scopedNames, $scoped, $children, $line)];
         $statements[] = $this->mark($this->output($this->viewHelperExpr($node, false)), $line);
-        return array_merge($statements, $this->assignedByViewHelper($node));
+        foreach ($removed as $name) {
+            // The ViewHelper removed the variable: it is gone, whatever it was before
+            $statements[] = $this->mark($this->assignVariable($name, $this->null()), $line);
+        }
+
+        return array_merge($statements, $persistent);
     }
 
     /**
-     * The variables the ViewHelper assigns to the template, declared in the configuration or in its
-     * docblock, as assignments after the call. A name given by an argument whose value is not a
-     * constant string cannot be resolved and is skipped.
+     * The variables the ViewHelper assigns, detected in its code or declared in the configuration or
+     * its docblock: those its children see, with their names, those the rest of the template sees
+     * after the call, and the names of those removed after the call. A name given by an argument
+     * whose value is not a constant string cannot be resolved and is skipped.
      *
-     * @return list<Stmt>
+     * @return array{list<Stmt>, list<string>, list<Stmt>, list<string>}
      */
     private function assignedByViewHelper(ViewHelperNode $node): array
     {
         $line = $this->lineOf($node);
-        $statements = [];
-        foreach ($this->assignments->forViewHelper($node->getViewHelperClassName()) as $name => $type) {
+        $scoped = [];
+        $scopedNames = [];
+        $persistent = [];
+        $removed = [];
+        foreach ($this->assignments->forViewHelper($node->getViewHelperClassName()) as $name => ['type' => $type, 'scope' => $scope]) {
             if (preg_match('/^\{(\w+)\}$/', $name, $matches) === 1) {
                 $argument = $matches[1];
                 $arguments = $node->getArguments();
@@ -490,10 +542,19 @@ final class TemplateTranspiler
 
             $statement = $this->assignVariable($name, $this->call('variable', [$this->string($name)]));
             $statement->setDocComment(new Doc(\sprintf('/** @var %s $%s */', $this->docType($type), VariableNames::php($name))));
-            $statements[] = $this->mark($statement, $line);
+            if ($scope === ViewHelperAssignments::SCOPE_TEMPLATE) {
+                $persistent[] = $this->mark($statement, $line);
+                continue;
+            }
+
+            $scoped[] = $this->mark($statement, $line);
+            $scopedNames[] = $name;
+            if ($scope === ViewHelperAssignments::SCOPE_REMOVED) {
+                $removed[] = $name;
+            }
         }
 
-        return $statements;
+        return [$scoped, $scopedNames, $persistent, $removed];
     }
 
     /**

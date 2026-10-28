@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FluidStan\Configuration;
 
+use FluidStan\Transpiler\ViewHelperAssignments;
 use Nette\Neon\Neon;
 
 /**
@@ -69,12 +70,16 @@ final class ConfigurationLoader
         $viewHelperAssignments = [];
         foreach ($this->stringMap($parameters['viewHelperAssignments'] ?? [], 'viewHelperAssignments') as $class => $variables) {
             $viewHelperAssignments[$class] = [];
-            foreach ($this->stringMap($variables, 'viewHelperAssignments.' . $class) as $name => $type) {
-                if (!\is_string($type)) {
-                    throw new ConfigurationException(\sprintf('"viewHelperAssignments.%s.%s" must be a PHPDoc type.', $class, $name));
+            foreach ($this->stringMap($variables, 'viewHelperAssignments.' . $class) as $name => $assignment) {
+                // A type, or a map with the type and a scope: "children" for a variable the children see only,
+                // "removed" when it is gone after the tag
+                $type = \is_array($assignment) ? ($assignment['type'] ?? null) : $assignment;
+                $scope = \is_array($assignment) ? ($assignment['scope'] ?? ViewHelperAssignments::SCOPE_TEMPLATE) : ViewHelperAssignments::SCOPE_TEMPLATE;
+                if (!\is_string($type) || !\in_array($scope, [ViewHelperAssignments::SCOPE_TEMPLATE, ViewHelperAssignments::SCOPE_CHILDREN, ViewHelperAssignments::SCOPE_REMOVED], true)) {
+                    throw new ConfigurationException(\sprintf('"viewHelperAssignments.%s.%s" must be a PHPDoc type, or a map with "type" and a "scope" of "template", "children" or "removed".', $class, $name));
                 }
 
-                $viewHelperAssignments[$class][$name] = $type;
+                $viewHelperAssignments[$class][$name] = ['type' => $type, 'scope' => $scope];
             }
         }
 

@@ -6,14 +6,17 @@ namespace FluidStan\Tests\Unit;
 
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Runner\GeneratedConfigWriter;
+use FluidStan\Tests\TemporaryDirectory;
 use Nette\Neon\Neon;
 use PHPUnit\Framework\TestCase;
 
 final class GeneratedConfigWriterTest extends TestCase
 {
+    use TemporaryDirectory;
+
     public function testWritesPhpStanConfiguration(): void
     {
-        $dir = sys_get_temp_dir() . '/fluidstan-config-' . getmypid();
+        $dir = $this->tmpDir;
         $configuration = (new ConfigurationLoader())->fromParameters([
             'bootstrapFiles' => ['/project/boot.php'],
             'phpstan' => ['includes' => ['/project/extra.neon'], 'parameters' => ['paths' => ['ignored'], 'checkFoo' => true]],
@@ -33,8 +36,5 @@ final class GeneratedConfigWriterTest extends TestCase
         $this->assertTrue($parameters['checkFoo'] ?? null);
         $this->assertFalse($parameters['reportUnmatchedIgnoredErrors'] ?? null);
         $this->assertTrue(is_file(GeneratedConfigWriter::extensionFile()));
-
-        unlink($dir . '/phpstan.neon');
-        rmdir($dir);
     }
 }
