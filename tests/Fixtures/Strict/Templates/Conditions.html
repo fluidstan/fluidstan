@@ -1,0 +1,39 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item item
+    @var FluidStan\Tests\Fixtures\Model\Item|null other
+    @var string label
+    @var int count
+    @var ArrayObject storage
+    @var bool flag
+    @var FluidStan\Tests\Fixtures\Model\Item[] items
+    @var int|string loose
+</f:comment>
+<f:if condition="{item}">always</f:if>
+<f:if condition="{other}">open</f:if>
+<f:if condition="{label}">open, may be "false" or "0"</f:if>
+<f:if condition="{count}">open</f:if>
+<f:if condition="{storage}">open, may be empty</f:if>
+<f:if condition="{items}">open</f:if>
+<f:if condition="{item.tags}">open</f:if>
+<f:if condition="{item} && {other}">right side open</f:if>
+<f:if condition="{item} || {other}">always</f:if>
+<f:if condition="!{item}">never</f:if>
+<f:if condition="{item.parent}">open</f:if>
+<f:if condition="{null}">never</f:if>
+<f:if condition="1">always</f:if>
+<f:if condition="'false'">never</f:if>
+<f:if condition="{count} == '5'">loose</f:if>
+<f:if condition="{label} == 5">loose</f:if>
+<f:if condition="{flag} == 1">loose</f:if>
+<f:if condition="{count} > '5'">loose</f:if>
+<f:if condition="{count} === '5'">strict comparison</f:if>
+<f:if condition="{count} == 5">same kind</f:if>
+<f:if condition="{label} == 'abc'">same kind</f:if>
+<f:if condition="{other.title} == 'abc'">null on the left is fine</f:if>
+<f:if condition="{storage} == 0">loose: a Countable is a bool</f:if>
+<f:if condition="{item} == {other}">objects</f:if>
+<f:if condition="{loose} == 5">a union may cross kinds</f:if>
+<f:if condition="{loose} == {label}">so may two of them</f:if>
+{f:if(condition: '{item}', then: 'always', else: 'never')}
+</html>

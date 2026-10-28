@@ -223,7 +223,7 @@ function fluidstan_template_HASH(): void
         // fluid:38
         \FluidStan\Runtime\F::child(\FluidStan\Runtime\F::get($item, 'price'));
         // fluid:38
-        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\Format\NumberViewHelper::class, ['decimals' => \FluidStan\Runtime\F::arg('decimals', \FluidStan\Runtime\F::get($counts, 'total'), 'scalar', false, 'f:format.number')], 'f:format.number'));
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\Format\NumberViewHelper::class, ['decimals' => \FluidStan\Runtime\F::arg('decimals', \FluidStan\Runtime\F::get($counts, 'total'), 'int', false, 'f:format.number')], 'f:format.number'));
     };
     // fluid:41
     $__section_Sub = function (): void {

@@ -1,0 +1,7 @@
+parameters:
+    paths:
+        - Templates
+    namespaces:
+        fs: FluidStan\Tests\Fixtures\Components\ComponentCollection
+    tmpDir: ../../../.cache/fluidstan-strict
+    strict: true

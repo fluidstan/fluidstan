@@ -19,6 +19,7 @@ final class GeneratedConfigWriterTest extends TestCase
         $dir = $this->tmpDir;
         $configuration = (new ConfigurationLoader())->fromParameters([
             'bootstrapFiles' => ['/project/boot.php'],
+            'strict' => true,
             'phpstan' => ['includes' => ['/project/extra.neon'], 'parameters' => ['paths' => ['ignored'], 'checkFoo' => true]],
         ], '/project');
 
@@ -35,6 +36,7 @@ final class GeneratedConfigWriterTest extends TestCase
         $this->assertSame('/project/.cache/fluidstan/phpstan', $parameters['tmpDir'] ?? null);
         $this->assertTrue($parameters['checkFoo'] ?? null);
         $this->assertFalse($parameters['reportUnmatchedIgnoredErrors'] ?? null);
+        $this->assertSame(['strict' => true], $parameters['fluidstan'] ?? null);
         $this->assertTrue(is_file(GeneratedConfigWriter::extensionFile()));
     }
 }

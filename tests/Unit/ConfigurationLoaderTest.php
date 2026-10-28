@@ -25,6 +25,7 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame([], $configuration->phpstanIncludes);
         $this->assertSame([], $configuration->phpstanParameters);
         $this->assertSame('/project/.cache/fluidstan', $configuration->tmpDir);
+        $this->assertFalse($configuration->strict);
         $this->assertNull($configuration->environment);
     }
 
@@ -37,6 +38,7 @@ final class ConfigurationLoaderTest extends TestCase
             'bootstrapFiles' => ['vendor/autoload.php'],
             'tmpDir' => 'var/fluidstan',
             'environment' => 'My\\Environment',
+            'strict' => true,
             'phpstan' => ['binary' => 'bin/phpstan', 'includes' => ['phpstan.neon'], 'parameters' => ['checkFoo' => true]],
             'viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => 'My\\Item', '{as}' => ['type' => 'string', 'scope' => 'children']]],
         ], '/project');
@@ -51,6 +53,14 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame(['/project/phpstan.neon'], $configuration->phpstanIncludes);
         $this->assertSame(['checkFoo' => true], $configuration->phpstanParameters);
         $this->assertSame(['My\\LoadViewHelper' => ['item' => ['type' => 'My\\Item', 'scope' => 'template'], '{as}' => ['type' => 'string', 'scope' => 'children']]], $configuration->viewHelperAssignments);
+        $this->assertTrue($configuration->strict);
+    }
+
+    public function testStrictMustBeABool(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('"strict" must be true or false.');
+        (new ConfigurationLoader())->fromParameters(['strict' => 'yes'], '/project');
     }
 
     public function testLoadsNeonRelativeToTheConfigFile(): void
@@ -91,12 +101,13 @@ final class ConfigurationLoaderTest extends TestCase
 
     public function testWithersKeepEverythingElse(): void
     {
-        $configuration = (new ConfigurationLoader())->fromParameters(['paths' => ['a'], 'environment' => 'E'], '/p');
+        $configuration = (new ConfigurationLoader())->fromParameters(['paths' => ['a'], 'environment' => 'E', 'strict' => true], '/p');
         $changed = $configuration->withPaths(['/x'])->withTmpDir('/tmp/t');
 
         $this->assertSame(['/x'], $changed->paths);
         $this->assertSame('/tmp/t', $changed->tmpDir);
         $this->assertSame('E', $changed->environment);
+        $this->assertTrue($changed->strict);
         $this->assertSame($configuration->namespaces, $changed->namespaces);
     }
 }

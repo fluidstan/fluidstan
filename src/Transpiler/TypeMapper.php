@@ -9,7 +9,9 @@ namespace FluidStan\Transpiler;
  *
  * Two views exist on the same Fluid type: the type a component body may assume for its
  * parameter, and the type a ViewHelper or component accepts at a call site. The latter mirrors
- * StrictArgumentProcessor, which casts scalars first and validates afterwards.
+ * StrictArgumentProcessor, which casts a scalar to a single scalar type first and validates
+ * afterwards; a union type is validated as is. The strict view accepts only what that cast
+ * leaves unchanged.
  */
 final class TypeMapper
 {
@@ -26,10 +28,19 @@ final class TypeMapper
         return $this->join($types);
     }
 
-    public function acceptedType(string $fluidType): string
+    /**
+     * @param bool $strict whether a scalar Fluid would cast to the declared type, losing information, is rejected too
+     */
+    public function acceptedType(string $fluidType, bool $strict = false): string
     {
-        $types = array_map($this->mapAcceptedMember(...), $this->members($fluidType));
-        return $this->join($types);
+        $members = $this->members($fluidType);
+        if (\count($members) > 1) {
+            // No cast for a union type: each member is validated as declared
+            return $this->join(array_map($this->mapParameterMember(...), $members));
+        }
+
+        $member = $members[0] ?? 'mixed';
+        return $this->join([$strict ? $this->mapStrictMember($member) : $this->mapAcceptedMember($member)]);
     }
 
     private function mapParameterMember(string $type): string
@@ -75,6 +86,21 @@ final class TypeMapper
             'null' => 'null',
             'scalar' => 'scalar',
             default => $this->className($type),
+        };
+    }
+
+    /**
+     * The scalar types a value may have without the cast to the declared type changing it: numeric
+     * strings and integers survive, booleans and non-numeric strings do not.
+     */
+    private function mapStrictMember(string $type): string
+    {
+        return match (strtolower($type)) {
+            'string' => 'string|int|float|\\Stringable',
+            'int', 'integer' => 'int|numeric-string',
+            'float', 'double' => 'float|int|numeric-string',
+            'bool', 'boolean' => 'bool',
+            default => $this->mapAcceptedMember($type),
         };
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FluidStan\PhpStan;
 
 use PHPStan\Type\BooleanType;
+use PHPStan\Type\IsSuperTypeOfResult;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\StringType;
 use PHPStan\Type\Type;
@@ -15,8 +16,8 @@ use TYPO3Fluid\Fluid\Core\Parser\UnsafeHTML;
 
 /**
  * Fluid's BooleanParser::convertNodeToBoolean(), which every operand of a condition passes through
- * before a comparison or arithmetic: a Countable becomes a bool, UnsafeHTML a string, anything else
- * stays what it is.
+ * before a comparison or arithmetic: a Countable becomes a bool, UnsafeHTML (Fluid 5) a string,
+ * anything else stays what it is.
  */
 final class FluidConversion
 {
@@ -30,7 +31,7 @@ final class FluidConversion
             }
 
             $countable = (new ObjectType(\Countable::class))->isSuperTypeOf($type);
-            $unsafeHtml = (new ObjectType(self::UNSAFE_HTML))->isSuperTypeOf($type);
+            $unsafeHtml = self::isUnsafeHtml($type);
             if ($countable->yes()) {
                 return new BooleanType();
             }
@@ -54,6 +55,19 @@ final class FluidConversion
     }
 
     /**
+     * Fluid 4 has no UnsafeHTML; PHPStan would answer "maybe" for the unknown interface and every
+     * operand would turn into a possible string.
+     */
+    private static function isUnsafeHtml(Type $type): IsSuperTypeOfResult
+    {
+        if (!interface_exists(self::UNSAFE_HTML)) {
+            return IsSuperTypeOfResult::createNo();
+        }
+
+        return (new ObjectType(self::UNSAFE_HTML))->isSuperTypeOf($type);
+    }
+
+    /**
      * Whether the conversion can change the outcome of a comparison with the operand: a possible
      * Countable is compared as a bool, a possible UnsafeHTML as a string, whatever the other side is
      * (two Countables compare their bools).
@@ -61,6 +75,6 @@ final class FluidConversion
     public static function affectsComparison(Type $operand): bool
     {
         return !(new ObjectType(\Countable::class))->isSuperTypeOf($operand)->no()
-            || !(new ObjectType(self::UNSAFE_HTML))->isSuperTypeOf($operand)->no();
+            || !self::isUnsafeHtml($operand)->no();
     }
 }

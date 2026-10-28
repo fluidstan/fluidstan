@@ -15,6 +15,7 @@ final readonly class Configuration
      * @param array<string, mixed> $phpstanParameters Additional PHPStan parameters merged into the generated config
      * @param string|null $environment Class implementing FluidStan\Environment\EnvironmentInterface
      * @param array<string, array<string, array{type: string, scope: string}>> $viewHelperAssignments ViewHelper class => variable name or {argument} => type and scope
+     * @param bool $strict Whether what Fluid tolerates silently is reported too: casts, paths through null, constant conditions, loose comparisons, rendered booleans
      */
     public function __construct(
         public string $rootDir,
@@ -28,6 +29,7 @@ final readonly class Configuration
         public string $tmpDir,
         public ?string $environment = null,
         public array $viewHelperAssignments = [],
+        public bool $strict = false,
     ) {}
 
     /**
@@ -35,11 +37,11 @@ final readonly class Configuration
      */
     public function withPaths(array $paths): self
     {
-        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment, $this->viewHelperAssignments);
+        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment, $this->viewHelperAssignments, $this->strict);
     }
 
     public function withTmpDir(string $tmpDir): self
     {
-        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment, $this->viewHelperAssignments);
+        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment, $this->viewHelperAssignments, $this->strict);
     }
 }

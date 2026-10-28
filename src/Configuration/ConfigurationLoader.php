@@ -83,6 +83,11 @@ final class ConfigurationLoader
             }
         }
 
+        $strict = $parameters['strict'] ?? false;
+        if (!\is_bool($strict)) {
+            throw new ConfigurationException('"strict" must be true or false.');
+        }
+
         return new Configuration(
             rootDir: $rootDir,
             paths: $this->resolvePaths($this->stringList($parameters['paths'] ?? [], 'paths'), $rootDir),
@@ -95,6 +100,7 @@ final class ConfigurationLoader
             tmpDir: $this->resolvePath(\is_string($tmpDir) ? $tmpDir : '.cache/fluidstan', $rootDir),
             environment: $environment,
             viewHelperAssignments: $viewHelperAssignments,
+            strict: $strict,
         );
     }
 

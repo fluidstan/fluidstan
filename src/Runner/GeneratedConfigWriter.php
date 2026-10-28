@@ -31,6 +31,7 @@ final class GeneratedConfigWriter
             'bootstrapFiles' => $bootstrapFiles,
             'reportUnmatchedIgnoredErrors' => false,
             'treatPhpDocTypesAsCertain' => true,
+            'fluidstan' => ['strict' => $configuration->strict],
             // Fluid's "array" argument type has no element type; that is not a template bug
             'ignoreErrors' => [
                 ['identifier' => 'missingType.iterableValue'],

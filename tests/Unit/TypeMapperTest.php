@@ -64,7 +64,8 @@ final class TypeMapperTest extends TestCase
         yield 'object' => ['object', 'object'];
         yield 'iterable' => ['iterable', 'iterable'];
         yield 'callable' => ['callable', 'callable'];
-        yield 'nullable union' => ['string|null', 'scalar|\\Stringable|null'];
+        yield 'union members are validated without casting' => ['string|int', 'string|int'];
+        yield 'nullable union' => ['string|null', 'string|null'];
         yield 'int elements are strict' => ['int[]', 'iterable<int>|\\ArrayAccess'];
         yield 'mixed member swallows the union' => ['string|mixed', 'mixed'];
     }
@@ -73,5 +74,25 @@ final class TypeMapperTest extends TestCase
     public function testAcceptedType(string $fluidType, string $expected): void
     {
         $this->assertSame($expected, (new TypeMapper())->acceptedType($fluidType));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function strictlyAcceptedTypes(): iterable
+    {
+        yield 'string survives casting ints, floats and Stringable' => ['string', 'string|int|float|\\Stringable'];
+        yield 'int survives casting numeric strings' => ['integer', 'int|numeric-string'];
+        yield 'float survives casting ints and numeric strings' => ['float', 'float|int|numeric-string'];
+        yield 'bool is already a bool' => ['bool', 'bool'];
+        yield 'nothing else is cast' => ['array', 'array|\\ArrayAccess|\\Traversable'];
+        yield 'class' => ['App\\Item', '\\App\\Item'];
+        yield 'union' => ['string|int', 'string|int'];
+    }
+
+    #[DataProvider('strictlyAcceptedTypes')]
+    public function testStrictlyAcceptedType(string $fluidType, string $expected): void
+    {
+        $this->assertSame($expected, (new TypeMapper())->acceptedType($fluidType, true));
     }
 }

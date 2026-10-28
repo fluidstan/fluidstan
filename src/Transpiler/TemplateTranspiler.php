@@ -667,10 +667,8 @@ final class TemplateTranspiler
         $items = [];
         foreach ($node->getArguments() as $argumentName => $value) {
             $definition = $definitions[$argumentName] ?? null;
-            $type = $definition === null ? 'mixed' : $this->typeMapper->acceptedType($definition->getType());
-            if ($definition !== null && $definition->isBooleanType()) {
-                $type = 'bool';
-            }
+            // The ArgumentRule maps the Fluid type to what is accepted; a boolean argument's value is already a bool
+            $type = $definition === null ? 'mixed' : ($definition->isBooleanType() ? 'bool' : $definition->getType());
 
             $items[] = new ArrayItem(
                 $this->call('arg', [
