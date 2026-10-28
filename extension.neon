@@ -1,3 +1,14 @@
+parametersSchema:
+    fluidstan: structure([
+        strict: bool()
+    ])
+
+parameters:
+    fluidstan:
+        # Also report what Fluid tolerates silently: cast argument values, paths through null,
+        # conditions that are always true or false, loose comparisons, rendered booleans
+        strict: false
+
 services:
     -
         class: FluidStan\PhpStan\PropertyPathResolver
@@ -7,17 +18,40 @@ services:
             parser: @currentPhpVersionRichParser
     -
         class: FluidStan\PhpStan\FReturnTypeExtension
+        arguments:
+            strict: %fluidstan.strict%
         tags:
             - phpstan.broker.dynamicStaticMethodReturnTypeExtension
     -
         class: FluidStan\PhpStan\ConditionTypeSpecifyingExtension
         tags:
             - phpstan.typeSpecifier.staticMethodTypeSpecifyingExtension
+    -
+        class: FluidStan\PhpStan\Rules\PropertyAccessRule
+        arguments:
+            strict: %fluidstan.strict%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: FluidStan\PhpStan\Rules\OutputRule
+        arguments:
+            strict: %fluidstan.strict%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: FluidStan\PhpStan\Rules\ArgumentRule
+        arguments:
+            strict: %fluidstan.strict%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: FluidStan\PhpStan\Rules\ComparisonRule
+        arguments:
+            strict: %fluidstan.strict%
+        tags:
+            - phpstan.rules.rule
 
 rules:
-    - FluidStan\PhpStan\Rules\PropertyAccessRule
-    - FluidStan\PhpStan\Rules\OutputRule
     - FluidStan\PhpStan\Rules\EachRule
-    - FluidStan\PhpStan\Rules\ArgumentRule
     - FluidStan\PhpStan\Rules\MathRule
     - FluidStan\PhpStan\Rules\AdditionalVariableRule

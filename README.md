@@ -62,8 +62,6 @@ validation; on Fluid 4, whose runtime is lenient, they report what would fail af
 - Layouts, partials and sections analysed with the types of their call sites (sections are currently
   analysed with `mixed` variables)
 - Type inference from `assign()` / `assignMultiple()` calls in PHP code
-- Opt-in strict mode for argument types that reports what Fluid silently casts, such as a
-  non-numeric string passed to an `int` argument
 - Baseline file, result cache, more output formats
 - Upstream proposal: positions on Fluid syntax tree nodes
 
@@ -98,10 +96,16 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
     tmpDir: var/cache/fluidstan
+    strict: false              # also report what Fluid tolerates silently, see "Strict mode"
     phpstan:
         includes: []           # extra PHPStan config files for the generated code
         parameters: {}         # extra PHPStan parameters
 ```
+
+Argument values are checked the way Fluid validates them: a scalar passed to a `string`, `int`,
+`float` or `bool` argument is cast to that type first, so `{item.title}` passes as an `int`
+argument and becomes `0` at runtime. Union types such as `string|int` are never cast and are
+checked member by member, as Fluid does. Strict mode reports the casts.
 
 PHPStan's rule level is not configurable: FluidStan's checks implement Fluid's semantics and run
 regardless of the level, and the generated code contains none of the constructs the levels add checks for.
@@ -190,6 +194,19 @@ it; a call whose argument is not a constant string assigns nothing. Subclasses i
 declared assignments alike. The configuration wins over a tag, and a tag wins over detection. After the
 call the variable is local, with everything that follows from that: its type is the declared one, and a
 read before the first call is still reported.
+
+## Strict mode
+
+Fluid tolerates a lot at runtime without a word. The default checks report what Fluid rejects or what
+cannot work; `strict: true` adds what Fluid does silently and what is probably not meant:
+
+| Identifier | Reported |
+| --- | --- |
+| `fluidstan.argument.cast` | A scalar passed to a `string`, `int` or `float` argument that Fluid casts, losing information: a string to `int` becomes `0`, a bool to `string` becomes `1` or an empty string. An integer or an integer-like numeric string for `int`, a number for `string`, still passes. |
+| `fluidstan.property.nullable` | A path through a value that may be null, such as `{item.parent.title}` with a nullable parent: Fluid yields null. Inside `<f:if condition="{item.parent}">` the value is known to be set and nothing is reported. |
+| `if.alwaysTrue`, `if.alwaysFalse`, `booleanAnd.*`, `booleanOr.*`, `booleanNot.*`, `ternary.*` | A condition the types decide, such as `<f:if condition="{item}">` on an object that cannot be null or a bare `'false'`; reported by PHPStan's own rules on the generated code. A string stays open because `"false"` and `"0"` are false, and so does a `Countable`, which may be empty. |
+| `fluidstan.comparison.loose` | A comparison of scalars of different kinds, such as `{count} == '5'` or `{flag} == 1`: Fluid compares with PHP's loose operators, so the outcome depends on type juggling. `===` and `!==` are never reported; a `Countable` compares as a bool. |
+| `fluidstan.output.bool` | A bool rendered into the output, which prints `1` or nothing. |
 
 ## Conditions
 

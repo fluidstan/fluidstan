@@ -187,8 +187,8 @@ final class F
     }
 
     /**
-     * One ViewHelper or component argument; $type is the accepted PHPDoc type derived from the
-     * ArgumentDefinition, $required whether null is rejected.
+     * One ViewHelper or component argument; $type is the Fluid type of the ArgumentDefinition,
+     * $required whether null is rejected.
      */
     public static function arg(string $name, mixed $value, string $type, bool $required, string $viewHelper): mixed
     {

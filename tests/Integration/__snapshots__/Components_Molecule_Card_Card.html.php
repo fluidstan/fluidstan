@@ -10,17 +10,17 @@ declare (strict_types=1);
 function fluidstan_template_HASH($item, $items): void
 {
     // fluid:6
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, 'FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     // fluid:7
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', \FluidStan\Runtime\F::get($item, 'title'), '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'label' => \FluidStan\Runtime\F::arg('label', \FluidStan\Runtime\F::get($item, 'price'), 'scalar|\Stringable', false, 'fs:atom.price')]));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', \FluidStan\Runtime\F::get($item, 'title'), 'FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'label' => \FluidStan\Runtime\F::arg('label', \FluidStan\Runtime\F::get($item, 'price'), 'string', false, 'fs:atom.price')]));
     // fluid:8
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'tags' => \FluidStan\Runtime\F::arg('tags', $items, 'iterable<string|\Stringable>|\ArrayAccess', false, 'fs:atom.price')]));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, 'FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'tags' => \FluidStan\Runtime\F::arg('tags', $items, 'string[]', false, 'fs:atom.price')]));
     // fluid:9
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $item, 'FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price')]));
     // fluid:12
     foreach (\FluidStan\Runtime\F::each($items) as $entry) {
         // fluid:13
-        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $entry, '\FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'label' => \FluidStan\Runtime\F::arg('label', \FluidStan\Runtime\F::get($entry, 'title'), 'scalar|\Stringable', false, 'fs:atom.price')]));
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::component('fs:atom.price', ['item' => \FluidStan\Runtime\F::arg('item', $entry, 'FluidStan\Tests\Fixtures\Model\Item', true, 'fs:atom.price'), 'label' => \FluidStan\Runtime\F::arg('label', \FluidStan\Runtime\F::get($entry, 'title'), 'string', false, 'fs:atom.price')]));
         // fluid:14
         \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::get($entry, 'price'), 'cents'));
     }

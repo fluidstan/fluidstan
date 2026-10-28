@@ -52,9 +52,9 @@ function fluidstan_template_HASH($item, $label = 'Price', $tags = null): void
         \FluidStan\Runtime\F::output($tag);
     }
     // fluid:16
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, ['subject' => \FluidStan\Runtime\F::arg('subject', \FluidStan\Runtime\F::get($item, 'title'), 'array|\ArrayAccess|\Traversable', false, 'f:count')], 'f:count'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, ['subject' => \FluidStan\Runtime\F::arg('subject', \FluidStan\Runtime\F::get($item, 'title'), 'array', false, 'f:count')], 'f:count'));
     // fluid:17
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, ['subject' => \FluidStan\Runtime\F::arg('subject', \FluidStan\Runtime\F::get($item, 'tags'), 'array|\ArrayAccess|\Traversable', false, 'f:count')], 'f:count'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper::class, ['subject' => \FluidStan\Runtime\F::arg('subject', \FluidStan\Runtime\F::get($item, 'tags'), 'array', false, 'f:count')], 'f:count'));
     // fluid:18
     if (\FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'active')) && \FluidStan\Runtime\F::bool(\FluidStan\Runtime\F::get($item, 'image'))) {
     }

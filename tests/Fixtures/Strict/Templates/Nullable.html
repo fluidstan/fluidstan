@@ -1,0 +1,12 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item item
+    @var FluidStan\Tests\Fixtures\Model\Item|null other
+    @var string key
+</f:comment>
+{item.title} {item.parent.title} {other.price}
+<f:if condition="{other}">{other.title} {other.parent.title}</f:if>
+<f:if condition="{item.parent}">{item.parent.title}</f:if>
+<f:variable name="gone" value="{null}" />{gone.title}
+{item.{key}} {other.{key}}
+</html>

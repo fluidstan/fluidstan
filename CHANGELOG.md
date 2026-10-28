@@ -19,6 +19,18 @@
   ViewHelpers were known already.
 - **`f:alias` and `f:cycle` variables** exist for their children only, as they do in Fluid; they were
   treated as persistent before.
+- **Strict mode.** `strict: true` in `fluidstan.neon` also reports what Fluid tolerates silently: a
+  scalar argument value Fluid casts to the declared `string`, `int` or `float` type, losing
+  information, a string to `int`, a bool to `string`, `"1.5"` to `int` (`fluidstan.argument.cast`); a property path through a value that may be null
+  (`fluidstan.property.nullable`); a condition the types decide, reported by PHPStan's own rules as
+  always true or false; a comparison of scalars of different kinds, which Fluid compares loosely
+  (`fluidstan.comparison.loose`); and a bool rendered into the output (`fluidstan.output.bool`).
+  README "Strict mode" has the details.
+
+### Fixed
+
+- Union argument types such as `string|int` are checked member by member without casting, as
+  Fluid's `StrictArgumentProcessor` validates them; a bool passed to such an argument was accepted.
 
 ## 0.2.0
 

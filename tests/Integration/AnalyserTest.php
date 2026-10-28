@@ -138,4 +138,67 @@ final class AnalyserTest extends TestCase
         ], $actual);
         $this->assertSame(12, $result->templateCount);
     }
+
+    /**
+     * Strict mode reports what Fluid tolerates silently; the lenient run above does not.
+     */
+    public function testStrictModeReportsWhatFluidTolerates(): void
+    {
+        $root = __DIR__ . '/../Fixtures/Strict';
+        $configuration = (new ConfigurationLoader())->load($root . '/fluidstan.neon', $root)
+            ->withTmpDir(sys_get_temp_dir() . '/fluidstan-strict-' . getmypid());
+        $autoload = \dirname(__DIR__, 2) . '/vendor/autoload.php';
+        $result = (new Analyser($configuration, $autoload, \dirname($autoload) . '/bin/phpstan'))->analyse();
+
+        $actual = array_map(
+            static fn(Diagnostic $d): string => \sprintf('%s:%s %s', basename($d->file), $d->line, $d->identifier),
+            $result->diagnostics->all(),
+        );
+        $this->assertSame([
+            // a string to float, then a bool to string, a string to int and a bool to float, then a float to int
+            'Arguments.html:12 fluidstan.argument.cast',
+            'Arguments.html:13 fluidstan.argument.cast',
+            'Arguments.html:13 fluidstan.argument.cast',
+            'Arguments.html:13 fluidstan.argument.cast',
+            'Arguments.html:14 fluidstan.argument.cast',
+            // what Fluid rejects is still a type error, not a cast
+            'Arguments.html:15 fluidstan.argument.type',
+            'Arguments.html:15 fluidstan.argument.type',
+            // a numeric string with a fractional part is truncated by the cast to int, "7" is not; both are fine as float
+            'Arguments.html:16 fluidstan.argument.cast',
+            // an integer string beyond PHP_INT_MAX is capped by the cast; "01" and "1e3" keep their value
+            'Arguments.html:18 fluidstan.argument.cast',
+            // an object that cannot be null is always true; nullable, string, int, Countable and array operands stay open
+            'Conditions.html:12 if.alwaysTrue',
+            'Conditions.html:19 booleanAnd.leftAlwaysTrue',
+            'Conditions.html:20 booleanOr.leftAlwaysTrue',
+            'Conditions.html:21 booleanNot.alwaysFalse',
+            'Conditions.html:23 if.alwaysFalse',
+            'Conditions.html:24 if.alwaysTrue',
+            'Conditions.html:25 if.alwaysFalse',
+            // scalars of different kinds compared loosely; === is PHPStan's business, equal kinds and null are fine
+            'Conditions.html:26 fluidstan.comparison.loose',
+            'Conditions.html:27 fluidstan.comparison.loose',
+            'Conditions.html:28 fluidstan.comparison.loose',
+            'Conditions.html:29 fluidstan.comparison.loose',
+            'Conditions.html:30 staticMethod.impossibleType',
+            'Conditions.html:33 fluidstan.property.nullable',
+            'Conditions.html:34 fluidstan.comparison.loose',
+            'Conditions.html:36 fluidstan.comparison.loose',
+            'Conditions.html:37 fluidstan.comparison.loose',
+            'Conditions.html:38 if.alwaysTrue',
+            // paths through a nullable parent and a nullable variable; not inside f:if on the value, and not on a sure one
+            'Nullable.html:7 fluidstan.property.nullable',
+            'Nullable.html:7 fluidstan.property.nullable',
+            'Nullable.html:8 fluidstan.property.nullable',
+            'Nullable.html:10 fluidstan.property.nullable',
+            // a dynamic segment on a nullable subject
+            'Nullable.html:11 fluidstan.property.nullable',
+            // a bool, a nullable bool and a bool narrowed to true
+            'Output.html:6 fluidstan.output.bool',
+            'Output.html:7 fluidstan.output.bool',
+            'Output.html:8 fluidstan.output.bool',
+        ], $actual);
+        $this->assertSame(4, $result->templateCount);
+    }
 }

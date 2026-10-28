@@ -19,24 +19,24 @@ function fluidstan_template_HASH($title): void
     // fluid:1
     $__section_Scoped = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', '__section_Scoped', true);
     // fluid:4
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'a-badge', 'scalar|\Stringable', true, 'fv:assign')], 'fv:assign'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'a-badge', 'string', true, 'fv:assign')], 'fv:assign'));
     // fluid:4
     /** @var string $class */
     $class = \FluidStan\Runtime\F::variable('class');
     // fluid:5
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', \FluidStan\Runtime\F::concat('a-badge--', $title), 'scalar|\Stringable', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', 'other', 'scalar|\Stringable', false, 'fv:assign')], 'fv:assign'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', \FluidStan\Runtime\F::concat('a-badge--', $title), 'string', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', 'other', 'string', false, 'fv:assign')], 'fv:assign'));
     // fluid:5
     /** @var string $other */
     $other = \FluidStan\Runtime\F::variable('other');
     // fluid:6
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'x', 'scalar|\Stringable', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', $title, 'scalar|\Stringable', false, 'fv:assign')], 'fv:assign'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'x', 'string', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', $title, 'string', false, 'fv:assign')], 'fv:assign'));
     // fluid:7
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'inline', 'scalar|\Stringable', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', 'inline', 'scalar|\Stringable', false, 'fv:assign')], 'fv:assign'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'inline', 'string', true, 'fv:assign'), 'target' => \FluidStan\Runtime\F::arg('target', 'inline', 'string', false, 'fv:assign')], 'fv:assign'));
     // fluid:7
     /** @var string $inline */
     $inline = \FluidStan\Runtime\F::variable('inline');
     // fluid:8
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\LoadViewHelper::class, ['uid' => \FluidStan\Runtime\F::arg('uid', 1, 'scalar', true, 'fv:load')], 'fv:load'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\LoadViewHelper::class, ['uid' => \FluidStan\Runtime\F::arg('uid', 1, 'int', true, 'fv:load')], 'fv:load'));
     // fluid:8
     /** @var FluidStan\Tests\Fixtures\Model\Item $item */
     $item = \FluidStan\Runtime\F::variable('item');
@@ -59,9 +59,9 @@ function fluidstan_template_HASH($title): void
     // fluid:10
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'missing'));
     // fluid:11
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'scalar|\Stringable', true, 'fv:detected')], 'fv:detected'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'string', true, 'fv:detected')], 'fv:detected'));
     // fluid:12
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'scalar|\Stringable', true, 'fv:detected'), 'as' => \FluidStan\Runtime\F::arg('as', 'loud', 'scalar|\Stringable', false, 'fv:detected')], 'fv:detected'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'string', true, 'fv:detected'), 'as' => \FluidStan\Runtime\F::arg('as', 'loud', 'string', false, 'fv:detected')], 'fv:detected'));
     // fluid:13
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'detected'), 'title'));
     // fluid:13
@@ -86,7 +86,7 @@ function fluidstan_template_HASH($title): void
     // fluid:16
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'label'), 'length'));
     // fluid:16
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\ProviderViewHelper::class, ['as' => \FluidStan\Runtime\F::arg('as', 'prov', 'scalar|\Stringable', false, 'fv:provider')], 'fv:provider'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\ProviderViewHelper::class, ['as' => \FluidStan\Runtime\F::arg('as', 'prov', 'string', false, 'fv:provider')], 'fv:provider'));
     // fluid:17
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'scoped'));
     // fluid:17

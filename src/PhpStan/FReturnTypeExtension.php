@@ -12,6 +12,7 @@ use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\ArrayType;
 use PHPStan\Type\BooleanType;
+use PHPStan\Type\Constant\ConstantBooleanType;
 use PHPStan\Type\DynamicStaticMethodReturnTypeExtension;
 use PHPStan\Type\FloatType;
 use PHPStan\Type\IntegerType;
@@ -32,6 +33,7 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
         private PropertyPathResolver $resolver,
         private AdditionalVariablesResolver $additionalVariables,
         private ReflectionProvider $reflectionProvider,
+        private bool $strict = false,
     ) {}
 
     public function getClass(): string
@@ -41,7 +43,7 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
     public function isStaticMethodSupported(MethodReflection $methodReflection): bool
     {
-        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg', 'additionalVariable', 'operand'], true);
+        return \in_array($methodReflection->getName(), ['get', 'getDynamic', 'each', 'valueOf', 'viewHelper', 'cast', 'arg', 'additionalVariable', 'operand', 'bool'], true);
     }
 
     public function getTypeFromStaticMethodCall(MethodReflection $methodReflection, StaticCall $methodCall, Scope $scope): ?Type
@@ -114,6 +116,15 @@ final readonly class FReturnTypeExtension implements DynamicStaticMethodReturnTy
 
             case 'operand':
                 return FluidConversion::ofOperand($argType(0));
+
+            case 'bool':
+                // In strict mode a condition decided by the types is a constant, which PHPStan reports as always true or false
+                if (!$this->strict) {
+                    return new BooleanType();
+                }
+
+                $truthiness = Truthiness::of($argType(0));
+                return $truthiness->maybe() ? new BooleanType() : new ConstantBooleanType($truthiness->yes());
 
             case 'additionalVariable':
                 $collections = $argType(0)->getConstantStrings();

@@ -44,7 +44,7 @@ function fluidstan_template_HASH(): void
     // fluid:5
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($label, 'length'));
     // fluid:5
-    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\ProviderViewHelper::class, ['as' => \FluidStan\Runtime\F::arg('as', 'provided', 'scalar|\Stringable', false, 'fv:provider')], 'fv:provider'));
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\ProviderViewHelper::class, ['as' => \FluidStan\Runtime\F::arg('as', 'provided', 'string', false, 'fv:provider')], 'fv:provider'));
     // fluid:6
     \FluidStan\Runtime\F::child(\FluidStan\Runtime\F::get($scoped, 'nonexistent'));
     // fluid:6

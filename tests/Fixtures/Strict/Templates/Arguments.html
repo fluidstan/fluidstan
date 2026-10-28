@@ -1,0 +1,21 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" xmlns:fs="http://typo3.org/ns/FluidStan/Tests/Fixtures/Components/ComponentCollection" data-namespace-typo3-fluid="true">
+<f:comment>
+    @var FluidStan\Tests\Fixtures\Model\Item item
+    @var DateTime date
+    @var '1.5' half
+    @var '7' seven
+    @var '9223372036854775808' huge
+    @var '01' padded
+    @var '1e3' exponent
+</f:comment>
+<fs:atom.typed text="{item.title}" count="{item.price}" ratio="1.5" flag="{item.active}" anything="{null}" when="{date}" />
+<fs:atom.typed text="{item.price}" count="12" ratio="{item.title}" flag="yes" anything="{item}" when="{date}" note="{null}" />
+<fs:atom.typed text="{item.active}" count="{item.title}" ratio="{item.active}" flag="1" anything="x" when="{date}" note="{item.price}" />
+<fs:atom.typed text="t" count="1.5" ratio="2" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="{item.money}" count="{item}" ratio="1" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="t" count="{half}" ratio="{half}" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="t" count="{seven}" ratio="{seven}" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="t" count="{huge}" ratio="{huge}" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="t" count="{padded}" ratio="{exponent}" flag="1" anything="x" when="{date}" />
+<fs:atom.typed text="t" count="{exponent}" ratio="{padded}" flag="1" anything="x" when="{date}" />
+</html>
