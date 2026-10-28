@@ -1,48 +1,63 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+ViewHelpers that assign template variables are detected, an opt-in strict mode reports what Fluid
+tolerates silently, and a baseline lets a project adopt FluidStan without fixing everything first.
+`fluidstan/typo3` 0.2 keeps working; 0.3 documents the new features for TYPO3 projects.
 
 ### Added
-
-- **Baseline and ignored errors.** `--generate-baseline` writes the current errors to
-  `fluidstan-baseline.neon`, or to the given path, as `ignoreErrors` entries in PHPStan's format;
-  `fluidstan.neon` includes it through `includes`. `ignoreErrors` takes what PHPStan takes, a pattern or
-  a map with `message` and/or `identifier`, `path` or `paths`, `count` and `reportUnmatched`, and the
-  matching is PHPStan's own: counts are checked and an entry that matches nothing is reported unless
-  `reportUnmatchedIgnoredErrors: false` is set. `fluidstan.neon` is read by Nette's configuration
-  loader, extended as PHPStan extends it, and validated against a schema; an unknown or mistyped
-  parameter is an error now. README
-  "Baseline and ignored errors".
-- **`strict` is undecided by default.** Without the setting the analysis runs as before and the
-  command points out that `strict: true` reports more and `strict: false` ends the note.
 
 - **Variables assigned by ViewHelpers.** A ViewHelper that puts a variable into the template through the
   variable provider is detected: PHPStan runs once over the classes of the ViewHelpers the templates
   use, finds every `add()` and `addAll()` on a variable provider and records the type of the value. A
   name that comes from an argument of the ViewHelper is traced back to it, an assignment that is not
-  reached on every path gets `|null`, and the pass is cached by the ViewHelper files. Where that is not
+  reached on every path gets `|null`. Where that is not
   enough, the assignment can be declared in `fluidstan.neon` under `viewHelperAssignments` for any
   class, or with a `@fluidstan-assigns` tag in the ViewHelper's docblock; `{target}` names the variable
   after an argument of the call, with the argument's default. After the call the variable is local and
   typed accordingly. A variable a ViewHelper gives its children only exists inside the tag: through a
   `ScopedVariableProvider` the previous value is restored afterwards, with `remove()` after
   `renderChildren()` the variable is gone for good, both as in Fluid; declared with `scope: children`
-  or `removed`, or `@fluidstan-assigns-to-children`. Fluid's own assigning
-  ViewHelpers were known already.
+  or `removed`, or `@fluidstan-assigns-to-children`. Fluid's own ViewHelpers are detected as well,
+  except the five the transpiler models itself; the pass is cached per set of ViewHelper files by
+  their content and the FluidStan and PHPStan versions.
 - **`f:alias` and `f:cycle` variables** exist for their children only, as they do in Fluid; they were
   treated as persistent before.
 - **Strict mode.** `strict: true` in `fluidstan.neon` also reports what Fluid tolerates silently: a
   scalar argument value Fluid casts to the declared `string`, `int` or `float` type, losing
-  information, a string to `int`, a bool to `string`, `"1.5"` to `int` (`fluidstan.argument.cast`); a property path through a value that may be null
-  (`fluidstan.property.nullable`); a condition the types decide, reported by PHPStan's own rules as
-  always true or false; a comparison of scalars of different kinds, which Fluid compares loosely
+  information, a string to `int`, a bool to `string`, `"1.5"` to `int` (`fluidstan.argument.cast`); a
+  property path through a value that may be null, `{item.parent.title}` with a nullable parent
+  (`fluidstan.property.nullable`); a condition the types decide, such as `<f:if condition="{item}">` on
+  an object that cannot be null, reported by PHPStan's own rules as always true or false; a comparison
+  of scalars of different kinds, `{count} == '5'`, which Fluid compares loosely
   (`fluidstan.comparison.loose`); and a bool rendered into the output (`fluidstan.output.bool`).
-  README "Strict mode" has the details.
+  Without the setting the analysis runs as before and the command points out that `strict: true`
+  reports more and `strict: false` ends the note. README "Strict mode" has the details.
+- **Baseline and ignored errors.** `--generate-baseline` writes the current errors to
+  `fluidstan-baseline.neon`, or to the given path, as `ignoreErrors` entries in PHPStan's format;
+  `fluidstan.neon` includes it through `includes`. `ignoreErrors` takes what PHPStan takes, a pattern or
+  a map with `message` and/or `identifier`, `path` or `paths`, `count` and `reportUnmatched`, and the
+  matching is PHPStan's own: counts are checked and an entry that matches nothing is reported unless
+  `reportUnmatchedIgnoredErrors: false` is set. `fluidstan.neon` is read by Nette's configuration
+  loader, extended as PHPStan extends it, so `includes` work as in PHPStan. README "Baseline and ignored errors".
+
+### Changed
+
+- **The configuration is validated against a schema**, as PHPStan validates its own: an unknown or
+  mistyped parameter in `fluidstan.neon` is an error with Nette's message, such as "Unexpected item
+  'nope'". Before, unknown parameters were silently ignored, so a typo in a parameter name stops the
+  run now instead of being without effect.
 
 ### Fixed
 
 - Union argument types such as `string|int` are checked member by member without casting, as
   Fluid's `StrictArgumentProcessor` validates them; a bool passed to such an argument was accepted.
+- `f:alias` assigned nothing: Fluid hands over the `map` argument wrapped in a root node, which the
+  check for an array missed, so the aliases were unknown variables inside the tag.
+- On Fluid 4 every condition operand counted as a possible string, because PHPStan was asked whether
+  it is an `UnsafeHTML`, an interface Fluid 4 does not have, and answered "maybe". Comparisons with an
+  object operand never narrowed there.
 
 ## 0.2.0
 

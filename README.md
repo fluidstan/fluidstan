@@ -55,7 +55,7 @@ analysed out of the box. Plain templates have `mixed` variables unless you decla
 Requires PHP 8.2+, Fluid 4.4 or 5.x, PHPStan 2. Argument checks always follow Fluid 5's strict
 validation; on Fluid 4, whose runtime is lenient, they report what would fail after an upgrade.
 
-> Status: early. The pipeline is complete, the rule set is small and the design is settled; see "How it works" and "Roadmap".
+> Status: early. The pipeline is complete and the design is settled; the rule set grows release by release, see "How it works" and "Roadmap".
 
 ## Roadmap
 
