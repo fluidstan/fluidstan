@@ -1,0 +1,10 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" xmlns:fv="http://typo3.org/ns/FluidStan/Tests/Fixtures/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:variable name="aliased" value="{0: 'first'}" />
+<f:alias map="{aliased: 'text'}">{aliased.length}</f:alias>
+<f:cycle values="{0: 1}" as="cycled">{cycled.length}</f:cycle>
+<fv:provider as="provided">{provided.nonexistent} {label.length}</fv:provider>
+<fv:scoped value="x">{scoped.nonexistent}</fv:scoped>
+<f:cycle values="{0: 1}" as="unread">nothing reads this variable, so there is no value to restore</f:cycle>
+{aliased.0} {cycled.length} {provided.nonexistent} {label.length} {scoped}
+<f:section name="Scoped"><f:alias map="{aliased: 'text'}">{aliased.length}</f:alias>{aliased.length}</f:section>
+</html>

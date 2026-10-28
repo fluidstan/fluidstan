@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace FluidStan;
 
 use FluidStan\Configuration\Configuration;
+use FluidStan\Detection\AssignmentDetector;
+use FluidStan\Detection\ViewHelperClasses;
 use FluidStan\Diagnostics\DiagnosticCollection;
 use FluidStan\Fluid\FluidEnvironment;
 use FluidStan\Fluid\TemplateFinder;
@@ -13,6 +15,7 @@ use FluidStan\Runner\PhpStanRunner;
 use FluidStan\Runner\ResultMapper;
 use FluidStan\Transpiler\GeneratedFile;
 use FluidStan\Transpiler\TemplateTranspiler;
+use FluidStan\Transpiler\ViewHelperAssignments;
 
 final class Analyser
 {
@@ -34,13 +37,13 @@ final class Analyser
         $diagnostics = new DiagnosticCollection();
         $environment = new FluidEnvironment($this->configuration);
         $files = (new TemplateFinder())->find($environment->resolvePaths($this->configuration->paths), $this->configuration->suffixes);
-        $transpiler = new TemplateTranspiler();
 
         $generatedDir = $this->configuration->tmpDir . '/generated';
         $this->resetDirectory($generatedDir);
         $generatedDir = (string) realpath($generatedDir);
         $this->generatedFiles = [];
 
+        $templates = [];
         foreach ($files as $file) {
             if ($progress !== null) {
                 $progress($file);
@@ -48,13 +51,22 @@ final class Analyser
 
             $parsed = $environment->parseFile($file);
             $diagnostics->merge($parsed->parseDiagnostics);
-            if (!$parsed->isParsed()) {
-                continue;
+            if ($parsed->isParsed()) {
+                $templates[] = $parsed;
             }
+        }
 
+        // What the ViewHelpers in use assign to templates is only known once their code was analysed
+        $binary = $this->configuration->phpstanBinary ?? $this->phpstanBinary;
+        $detected = $this->runPhpStan && $binary !== null
+            ? (new AssignmentDetector($this->configuration, $this->autoloadFile, $binary))->detect(ViewHelperClasses::inTemplates($templates))
+            : [];
+        $transpiler = new TemplateTranspiler(assignments: new ViewHelperAssignments($this->configuration->viewHelperAssignments, $detected));
+
+        foreach ($templates as $parsed) {
             $generated = $transpiler->transpile($parsed);
             $diagnostics->merge($generated->diagnostics);
-            $generatedPath = $generatedDir . '/' . md5($file) . '.php';
+            $generatedPath = $generatedDir . '/' . md5($parsed->file) . '.php';
             file_put_contents($generatedPath, $generated->code);
             // PHPStan reports canonical paths
             $this->generatedFiles[(string) realpath($generatedPath)] = $generated;
@@ -64,7 +76,6 @@ final class Analyser
             $configFile = $this->configuration->tmpDir . '/phpstan.neon';
             $extraBootstrap = $environment->getEnvironment()?->getPhpStanBootstrapFiles() ?? [];
             (new GeneratedConfigWriter())->write($this->configuration, $generatedDir, $configFile, $this->autoloadFile, $extraBootstrap);
-            $binary = $this->configuration->phpstanBinary ?? $this->phpstanBinary;
             if ($binary === null) {
                 throw new \RuntimeException('PHPStan binary could not be located; set "phpstan.binary" in the configuration.');
             }

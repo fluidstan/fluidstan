@@ -138,6 +138,59 @@ return types, so a collection that builds `['component' => ['class' => ..., 'pre
 `{component.class}` the type `string`. A `@return` array shape in the method's PHPDoc takes precedence,
 and `@var` in the template overrides both.
 
+## Variables assigned by ViewHelpers
+
+`f:variable`, `f:alias`, `f:cycle`, `f:for` and `f:groupedFor` are the ViewHelpers Fluid ships that put
+variables into a template, and FluidStan knows them. A ViewHelper of your own or of an extension may do
+the same through the variable provider. FluidStan finds that out by itself: before the templates are
+analysed, PHPStan runs once over the classes of the ViewHelpers they use and records every `add()` and
+`addAll()` on a variable provider, with the type of the value. A constant name is taken as is; a name
+that comes from an argument of the ViewHelper, through casts, local variables or a `toString()`-like
+helper, becomes that argument, so `$provider->add($this->arguments['target'], ...)` assigns the
+variable the call's `target` argument names, or the argument's default. An assignment that is not
+reached on every path, after an early `return` or inside a condition, may leave the variable unassigned,
+which in Fluid means `null`, so its type gets `|null`. The pass is cached in `tmpDir` per set of
+ViewHelper files, by their content and the FluidStan and PHPStan versions, and only runs again when one
+of them changed. A type a ViewHelper takes from another file, such as a repository's return type, is not
+tracked: after such a change, touch the ViewHelper or delete the cache.
+
+A ViewHelper may also give a variable to its children only, the way `f:alias` and `f:cycle` do. Both
+forms Fluid offers are detected and modelled as Fluid behaves: a `ScopedVariableProvider` around a
+`StandardVariableProvider` restores the previous value after the tag, while `add()`, `renderChildren()`
+and `remove()` deletes the variable for good, so it is `null` afterwards even if the collection provided it.
+
+Where detection cannot follow the code, the name is computed or the ViewHelper delegates to a service,
+or where it is more cautious than you know to be true, declare the assignment in `fluidstan.neon`:
+
+```neon
+parameters:
+    viewHelperAssignments:
+        # ViewHelper class => variable => PHPDoc type; {target} names the variable after the "target" argument
+        My\Site\ViewHelpers\ClassBuilderViewHelper:
+            '{target}': string
+        My\Site\ViewHelpers\LoadProductViewHelper:
+            product: My\Site\Domain\Model\Product
+        # a variable the children see only; scope "removed" when the ViewHelper deletes it afterwards
+        My\Site\ViewHelpers\WithProductViewHelper:
+            '{as}': { type: My\Site\Domain\Model\Product, scope: children }
+```
+
+For your own ViewHelpers the same can live in the class docblock, where it is kept next to the code:
+
+```php
+/**
+ * @fluidstan-assigns {target} string
+ * @fluidstan-assigns-to-children {as} My\Site\Domain\Model\Product
+ */
+final class ClassBuilderViewHelper extends AbstractViewHelper
+```
+
+`{target}` resolves to the call's `target` argument, or to the argument's default when the call omits
+it; a call whose argument is not a constant string assigns nothing. Subclasses inherit detected and
+declared assignments alike. The configuration wins over a tag, and a tag wins over detection. After the
+call the variable is local, with everything that follows from that: its type is the declared one, and a
+read before the first call is still reported.
+
 ## Conditions
 
 Inside `<f:if condition="{item}">` the type of `item` loses `null`, `false`, empty strings and

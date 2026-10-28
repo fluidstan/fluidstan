@@ -10,6 +10,7 @@ use FluidStan\Diagnostics\Diagnostic;
 use FluidStan\Tests\Fixtures\Scope\Local;
 use FluidStan\Tests\Fixtures\Scope\Provided;
 use FluidStan\Tests\Fixtures\Scope\ScopeCollection;
+use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TYPO3Fluid\Fluid\View\TemplateView;
@@ -27,6 +28,8 @@ use TYPO3Fluid\Fluid\View\TemplateView;
  */
 final class ScopeTest extends TestCase
 {
+    use TemporaryDirectory;
+
     private const CASES = __DIR__ . '/../Fixtures/Scope/Cases';
 
     /** The value Fluid used: C = the collection's, L = a local one, N = none */
@@ -74,6 +77,11 @@ final class ScopeTest extends TestCase
         yield 'assignment inside a section stays there' => ['SectionScope', ['A' => [], 'B' => [$c]], ['A' => []]];
         yield 'reassigned from itself' => ['ReassignFromItself', ['A' => [$c]], []];
         yield 'loop in a condition restores the earlier local value' => ['AssignThenLoopAlias', ['A' => [$c], 'B' => [$l]], []];
+        yield 'alias exists for its children only' => ['AliasScope', ['A' => [$l], 'B' => [$c]], []];
+        yield 'cycle variable exists for its children only' => ['CycleScope', ['A' => [$l], 'B' => [$c]], []];
+        // the ViewHelper assigns its mixed "value" argument, so nothing is assumed inside; remove() deletes
+        // the variable for good, which Fluid renders as nothing and FluidStan types as null
+        yield 'a ViewHelper that removes its variable again' => ['ScopedViewHelper', ['A' => [$l], 'B' => [$n]], ['A' => [], 'B' => []]];
     }
 
     /**
@@ -109,7 +117,7 @@ final class ScopeTest extends TestCase
             foreach ([[], [new Local(), new Local()]] as $items) {
                 $view = new TemplateView();
                 $view->getRenderingContext()->getTemplatePaths()->setTemplateSource(\sprintf(
-                    '<html xmlns:sc="http://typo3.org/ns/FluidStan/Tests/Fixtures/Scope/ScopeCollection" data-namespace-typo3-fluid="true"><sc:cases.%s flag="{flag}" local="{local}" items="{items}" others="{others}" /></html>',
+                    '<html xmlns:sc="http://typo3.org/ns/FluidStan/Tests/Fixtures/Scope/ScopeCollection" xmlns:fv="http://typo3.org/ns/FluidStan/Tests/Fixtures/ViewHelpers" data-namespace-typo3-fluid="true"><sc:cases.%s flag="{flag}" local="{local}" items="{items}" others="{others}" /></html>',
                     lcfirst($case),
                 ));
                 $view->assignMultiple(['flag' => $flag, 'local' => new Local(), 'items' => $items, 'others' => [new Provided(), new Provided()]]);
@@ -153,7 +161,7 @@ final class ScopeTest extends TestCase
         $configuration = (new ConfigurationLoader())->fromParameters([
             'paths' => [self::CASES],
             'namespaces' => ['sc' => ScopeCollection::class],
-            'tmpDir' => sys_get_temp_dir() . '/fluidstan-scope-' . getmypid(),
+            'tmpDir' => $this->tmpDir,
         ], $root);
         $autoload = \dirname(__DIR__, 2) . '/vendor/autoload.php';
         $result = (new Analyser($configuration, $autoload, \dirname($autoload) . '/bin/phpstan'))->analyse();

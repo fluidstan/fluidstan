@@ -7,6 +7,7 @@ namespace FluidStan\Tests\Integration;
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Fluid\FluidEnvironment;
 use FluidStan\Transpiler\TemplateTranspiler;
+use FluidStan\Transpiler\ViewHelperAssignments;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -27,9 +28,11 @@ final class TranspilerSnapshotTest extends TestCase
         yield 'syntax coverage' => ['Templates/Syntax.html'];
         yield 'argument coercion and validation' => ['Templates/Arguments.html'];
         yield 'conditions narrow their operands' => ['Templates/Conditions.html'];
+        yield 'scoped variables in a plain template' => ['Templates/Scoped.html'];
         yield 'component with scalar arguments' => ['Components/Atom/Typed/Typed.html'];
         yield 'component with additional variables' => ['Components/Atom/Meta/Meta.html'];
         yield 'component without arguments' => ['Components/Atom/Logo/Logo.html'];
+        yield 'variables assigned by ViewHelpers' => ['Components/Atom/Assigned/Assigned.html'];
         yield 'component with declared additional variable shape' => ['Documented/Atom/Note/Note.html'];
     }
 
@@ -41,7 +44,7 @@ final class TranspilerSnapshotTest extends TestCase
         $parsed = (new FluidEnvironment($configuration))->parseFile($root . '/' . $template);
         $this->assertTrue($parsed->isParsed());
 
-        $generated = (new TemplateTranspiler())->transpile($parsed);
+        $generated = (new TemplateTranspiler(assignments: new ViewHelperAssignments($configuration->viewHelperAssignments)))->transpile($parsed);
         // The header carries the absolute template path and the function name hashes it; keep
         // snapshots machine independent
         $code = str_replace($root . '/', '', $generated->code);

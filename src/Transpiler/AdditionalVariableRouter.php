@@ -20,8 +20,10 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Block;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
+use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\NodeVisitorAbstract;
@@ -45,10 +47,16 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
     /** Attribute on an Assign inside a loop body whose variable Fluid restores when the loop ends */
     public const LOOP_ALIAS = 'loopAlias';
 
+    /** Attribute on a Block: the PHP names of variables that exist inside the block only (f:alias, f:cycle, scoped ViewHelpers) */
+    public const SCOPE = 'scope';
+
     /** @var array<int, array{list<Stmt>, list<Stmt>}> backup and restore statements around a loop, by object id */
     private array $surroundings = [];
 
     private int $loops = 0;
+
+    /** @var array<string, true> every variable name the generated code uses, which a backup must not reuse */
+    private array $used = [];
 
     /**
      * @param array<string, true> $assigned PHP variable names that have a value before the body, such as the arguments
@@ -70,6 +78,22 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
         }
 
         return [...$preamble, ...$this->traverse($statements)];
+    }
+
+    /**
+     * @param array<Node> $nodes
+     * @return array<Node>|null
+     */
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->used = [];
+        foreach ((new NodeFinder())->findInstanceOf($nodes, Variable::class) as $variable) {
+            if (\is_string($variable->name)) {
+                $this->used[$variable->name] = true;
+            }
+        }
+
+        return null;
     }
 
     public function enterNode(Node $node): int|Node|null
@@ -94,7 +118,60 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
             return $this->enterLoop($node);
         }
 
+        if ($node instanceof Block && \is_array($node->getAttribute(self::SCOPE))) {
+            return $this->enterScope($node);
+        }
+
         return $node instanceof Closure ? NodeVisitor::DONT_TRAVERSE_CHILDREN : null;
+    }
+
+    /**
+     * A block whose variables exist for its statements only: Fluid gives the children a scoped
+     * variable provider and takes it away again afterwards.
+     */
+    private function enterScope(Block $block): int
+    {
+        $names = [];
+        foreach ((array) $block->getAttribute(self::SCOPE) as $name) {
+            if (\is_string($name)) {
+                $names[$name] = true;
+            }
+        }
+
+        $before = $this->assigned;
+        [$pre, $post] = $this->backups(array_keys(array_intersect_key($names, $before)), $block);
+        $block->stmts = $this->traverse(array_values($block->stmts));
+        $this->assigned = array_diff_key($this->assigned, array_diff_key($names, $before));
+        $this->surroundings[spl_object_id($block)] = [$pre, $post];
+        return NodeVisitor::DONT_TRAVERSE_CHILDREN;
+    }
+
+    /**
+     * Fluid backs up a variable that a loop or a scope shadows and restores it afterwards.
+     *
+     * @param list<string> $names
+     * @return array{list<Stmt>, list<Stmt>}
+     */
+    private function backups(array $names, Node $node): array
+    {
+        $pre = [];
+        $post = [];
+        foreach ($names as $name) {
+            // Fluid 5 rejects identifiers starting with "_", Fluid 4 does not: skip the names the code uses
+            do {
+                $backupName = \sprintf('__backup%d_%s', ++$this->loops, $name);
+            } while (isset($this->used[$backupName]));
+
+            $backup = new Variable($backupName);
+            $pre[] = new Expression(new Assign($backup, new Variable($name)));
+            $post[] = new Expression(new Assign(new Variable($name), $backup));
+        }
+
+        foreach ([...$pre, ...$post] as $statement) {
+            $statement->setAttribute('comments', $node->getComments());
+        }
+
+        return [$pre, $post];
     }
 
     /**
@@ -123,26 +200,13 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
             }
         }
 
-        $pre = [];
-        $post = [];
-        ++$this->loops;
-        foreach (array_keys(array_intersect_key($aliases, $before)) as $name) {
-            // Fluid backs up a variable the loop shadows and restores it when the loop ends
-            $backup = new Variable(\sprintf('__backup%d_%s', $this->loops, $name));
-            $pre[] = new Expression(new Assign($backup, new Variable($name)));
-            $post[] = new Expression(new Assign(new Variable($name), $backup));
-        }
-
+        [$pre, $post] = $this->backups(array_keys(array_intersect_key($aliases, $before)), $loop);
         $this->markAssigned($loop->valueVar);
         $this->markAssigned($loop->keyVar);
         $loop->stmts = $this->traverse(array_values($loop->stmts));
 
         // Loop variables that did not exist before the loop are gone again
         $this->assigned = array_diff_key($this->assigned, array_diff_key($aliases, $before));
-        foreach ([...$pre, ...$post] as $statement) {
-            $statement->setAttribute('comments', $loop->getComments());
-        }
-
         $this->surroundings[spl_object_id($loop)] = [$pre, $post];
         return NodeVisitor::DONT_TRAVERSE_CHILDREN;
     }

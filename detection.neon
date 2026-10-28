@@ -1,0 +1,8 @@
+# PHPStan configuration for the pass over ViewHelper classes that detects the variables they assign
+services:
+    -
+        class: FluidStan\PhpStan\Rules\ViewHelperAssignmentRule
+        arguments:
+            parser: @currentPhpVersionRichParser
+        tags:
+            - phpstan.rules.rule

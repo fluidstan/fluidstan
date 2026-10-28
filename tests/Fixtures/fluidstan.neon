@@ -8,4 +8,9 @@ parameters:
     namespaces:
         fs: FluidStan\Tests\Fixtures\Components\ComponentCollection
         fd: FluidStan\Tests\Fixtures\Documented\DocumentedCollection
+        fv: FluidStan\Tests\Fixtures\ViewHelpers
     tmpDir: ../../.cache/fluidstan-fixtures
+    viewHelperAssignments:
+        # The variables a ViewHelper assigns to the template, for ViewHelpers without a @fluidstan-assigns tag
+        FluidStan\Tests\Fixtures\ViewHelpers\LoadViewHelper:
+            item: FluidStan\Tests\Fixtures\Model\Item
