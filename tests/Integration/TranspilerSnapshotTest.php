@@ -28,6 +28,7 @@ final class TranspilerSnapshotTest extends TestCase
         yield 'syntax coverage' => ['Templates/Syntax.html'];
         yield 'argument coercion and validation' => ['Templates/Arguments.html'];
         yield 'conditions narrow their operands' => ['Templates/Conditions.html'];
+        yield 'scoped variables in a plain template' => ['Templates/Scoped.html'];
         yield 'component with scalar arguments' => ['Components/Atom/Typed/Typed.html'];
         yield 'component with additional variables' => ['Components/Atom/Meta/Meta.html'];
         yield 'component without arguments' => ['Components/Atom/Logo/Logo.html'];

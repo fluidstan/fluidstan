@@ -16,6 +16,8 @@ function fluidstan_template_HASH($title): void
     $inline = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'inline', true);
     // fluid:1
     $item = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'item', true);
+    // fluid:1
+    $__section_Scoped = \FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', '__section_Scoped', true);
     // fluid:4
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\AssignViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', 'a-badge', 'scalar|\Stringable', true, 'fv:assign')], 'fv:assign'));
     // fluid:4
@@ -91,4 +93,22 @@ function fluidstan_template_HASH($title): void
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'prov'));
     // fluid:17
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'label'));
+    // fluid:18
+    $__section_Scoped = function (): void {
+        // fluid:18
+        $title = \FluidStan\Runtime\F::variable('title');
+        // fluid:18
+        $__scope1_title = $title;
+        // fluid:18
+        {
+            // fluid:18
+            $title = 1;
+            // fluid:18
+            \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($title, 'length'));
+        }
+        // fluid:18
+        $title = $__scope1_title;
+        // fluid:18
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($title, 'length'));
+    };
 }

@@ -98,6 +98,12 @@ final class TemplateTranspiler
 
     private int $currentLine = 1;
 
+    /** Scoped blocks emitted so far, which numbers their backup variables */
+    private int $scopes = 0;
+
+    /** Whether a section is being emitted; its closure is a scope of its own */
+    private bool $inSection = false;
+
     /** @var array<string, true> */
     private array $referencedRoots = [];
 
@@ -124,6 +130,8 @@ final class TemplateTranspiler
         $this->diagnostics = new DiagnosticCollection();
         $this->file = $template->file;
         $this->currentLine = 1;
+        $this->scopes = 0;
+        $this->inSection = false;
         $this->referencedRoots = [];
 
         $root = $state->getRootNode();
@@ -375,7 +383,7 @@ final class TemplateTranspiler
         $arguments = $node->getArguments();
         $as = $this->constantString($arguments['as'] ?? null) ?? '__cycle';
         $statements = [$this->mark($this->assignVariable($as, $this->call('valueOf', [$this->expr($arguments['values'] ?? null)])), $line)];
-        return [$this->scopedBlock([$as], $statements, $this->emitBlock($node->getChildNodes()), $line)];
+        return $this->scopedBlock([$as], $statements, $this->emitBlock($node->getChildNodes()), $line);
     }
 
     /**
@@ -398,13 +406,18 @@ final class TemplateTranspiler
 
     /**
      * Statements with variables that exist for them only, as Fluid's ScopedVariableProvider gives
-     * them to the children of f:alias, f:cycle and scoping ViewHelpers.
+     * them to the children of f:alias, f:cycle and scoping ViewHelpers. A PHP block has no scope of
+     * its own, so the previous values are backed up before it and restored after it. In a component
+     * the AdditionalVariableRouter does that, since it also keeps track of which variables exist;
+     * everywhere else, in a plain template and in a section, every variable that is read has a value
+     * from the preamble, and that is what is restored.
      *
      * @param list<string> $names Fluid names of the scoped variables
      * @param list<Stmt> $assignments
      * @param list<Stmt> $children
+     * @return list<Stmt>
      */
-    private function scopedBlock(array $names, array $assignments, array $children, int $line): Stmt
+    private function scopedBlock(array $names, array $assignments, array $children, int $line): array
     {
         foreach ($assignments as $assignment) {
             if ($assignment instanceof Expression) {
@@ -412,8 +425,21 @@ final class TemplateTranspiler
             }
         }
 
-        $block = new Block([...$assignments, ...$children], [AdditionalVariableRouter::SCOPE => array_map(VariableNames::php(...), $names)]);
-        return $this->mark($block, $line);
+        $block = $this->mark(new Block([...$assignments, ...$children], [AdditionalVariableRouter::SCOPE => array_map(VariableNames::php(...), $names)]), $line);
+        if ($this->template?->component instanceof ComponentTemplate && !$this->inSection) {
+            return [$block];
+        }
+
+        $pre = [];
+        $post = [];
+        ++$this->scopes;
+        foreach (array_filter($names, fn(string $name): bool => isset($this->referencedRoots[$name])) as $name) {
+            $backup = new Variable(\sprintf('__scope%d_%s', $this->scopes, VariableNames::php($name)));
+            $pre[] = $this->mark(new Expression(new Assign($backup, $this->variable($name))), $line);
+            $post[] = $this->mark(new Expression(new Assign($this->variable($name), $backup)), $line);
+        }
+
+        return [...$pre, $block, ...$post];
     }
 
     /**
@@ -459,7 +485,7 @@ final class TemplateTranspiler
             }
         }
 
-        return [$this->scopedBlock($names, $statements, $this->emitBlock($node->getChildNodes()), $line)];
+        return $this->scopedBlock($names, $statements, $this->emitBlock($node->getChildNodes()), $line);
     }
 
     /**
@@ -483,11 +509,13 @@ final class TemplateTranspiler
             $preamble[] = $this->mark($this->assignVariable($root, $this->call('variable', [$this->string($root)])), $line);
         }
 
-        $this->referencedRoots = $outerRoots;
+        $this->inSection = true;
         $closure = new Closure([
             'stmts' => array_merge($preamble, $this->emitBlock($node->getChildNodes())),
             'returnType' => new Identifier('void'),
         ]);
+        $this->inSection = false;
+        $this->referencedRoots = $outerRoots;
         return [$this->mark(new Expression(new Assign($this->variable('__section_' . $name), $closure)), $line)];
     }
 
@@ -500,7 +528,7 @@ final class TemplateTranspiler
         [$scoped, $scopedNames, $persistent, $removed] = $this->assignedByViewHelper($node);
         // Fluid casts children to string only when there are several of them
         $children = $this->emitBlock($node->getChildNodes(), \count($node->getChildNodes()) === 1);
-        $statements = $scoped === [] ? $children : [$this->scopedBlock($scopedNames, $scoped, $children, $line)];
+        $statements = $scoped === [] ? $children : $this->scopedBlock($scopedNames, $scoped, $children, $line);
         $statements[] = $this->mark($this->output($this->viewHelperExpr($node, false)), $line);
         foreach ($removed as $name) {
             // The ViewHelper removed the variable: it is gone, whatever it was before

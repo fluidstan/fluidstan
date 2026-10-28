@@ -44,6 +44,8 @@ final class AnalyserTest extends TestCase
             'Assigned.html:16 fluidstan.property.unresolvable',
             'Assigned.html:17 variable.undefined',
             'Assigned.html:17 variable.undefined',
+            // in a section, f:alias restores the variable too
+            'Assigned.html:18 fluidstan.property.unresolvable',
             // a component without arguments still has its collection's variables
             'Logo.html:2 fluidstan.property.unresolvable',
             'Logo.html:2 variable.undefined',
@@ -126,7 +128,14 @@ final class AnalyserTest extends TestCase
             'Conditions.html:34 fluidstan.argument.type',
             'Conditions.html:35 fluidstan.argument.type',
             'Plain.html:2 fluidstan.property.unresolvable',
+            // variables for the children of f:alias, f:cycle and scoping ViewHelpers are restored
+            // afterwards in a plain template and in a section too
+            'Scoped.html:3 fluidstan.property.unresolvable',
+            'Scoped.html:4 fluidstan.property.unresolvable',
+            'Scoped.html:5 fluidstan.property.unresolvable',
+            'Scoped.html:5 fluidstan.property.unresolvable',
+            'Scoped.html:9 fluidstan.property.unresolvable',
         ], $actual);
-        $this->assertSame(11, $result->templateCount);
+        $this->assertSame(12, $result->templateCount);
     }
 }
