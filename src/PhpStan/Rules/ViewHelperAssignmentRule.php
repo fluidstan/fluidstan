@@ -35,6 +35,7 @@ use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
 use PHPStan\Type\VerbosityLevel;
+use TYPO3Fluid\Fluid\Core\Variables\ScopedVariableProvider;
 use TYPO3Fluid\Fluid\Core\Variables\StandardVariableProvider;
 use TYPO3Fluid\Fluid\Core\Variables\VariableProviderInterface;
 
@@ -50,8 +51,9 @@ use TYPO3Fluid\Fluid\Core\Variables\VariableProviderInterface;
  * an early return or in a loop, may leave the variable unassigned, which in Fluid means null.
  *
  * A variable that exists for the ViewHelper's children only is recognised in both forms Fluid uses:
- * `add()` followed by `remove()` of the same name, and a `new StandardVariableProvider([...])` for a
- * ScopedVariableProvider, as f:alias and f:cycle do.
+ * `add()` followed by `remove()` of the same name, and a `new StandardVariableProvider([...])` handed
+ * to a ScopedVariableProvider, directly or through a local variable, as f:cycle and f:alias do. A
+ * provider that is never installed on the rendering context assigns nothing.
  *
  * @implements Rule<Expr>
  */
@@ -82,7 +84,7 @@ final class ViewHelperAssignmentRule implements Rule
         if ($node instanceof New_ && $node->class instanceof Name && $scope->resolveName($node->class) === StandardVariableProvider::class) {
             $method = $this->enclosingMethod($scope->getFile(), $node);
             $array = $node->getArgs()[0]->value ?? null;
-            if (!$method instanceof ClassMethod || !$array instanceof Array_) {
+            if (!$method instanceof ClassMethod || !$array instanceof Array_ || !$this->isScopedProvider($node, $method, $scope)) {
                 return [];
             }
 
@@ -172,6 +174,32 @@ final class ViewHelperAssignmentRule implements Rule
         }
 
         return $assignments;
+    }
+
+    /**
+     * Whether the provider is an argument of a `new ScopedVariableProvider(...)` in the method, written
+     * in place or assigned to a local variable first.
+     */
+    private function isScopedProvider(New_ $provider, ClassMethod $method, Scope $scope): bool
+    {
+        foreach ((new NodeFinder())->findInstanceOf($method->stmts ?? [], New_::class) as $scoped) {
+            if (!$scoped->class instanceof Name || $scope->resolveName($scoped->class) !== ScopedVariableProvider::class) {
+                continue;
+            }
+
+            foreach ($scoped->getArgs() as $argument) {
+                $value = $argument->value;
+                if ($value instanceof Variable && \is_string($value->name)) {
+                    $value = $this->lastAssignmentBefore($value->name, $method, $scoped);
+                }
+
+                if ($value instanceof New_ && $value->getStartFilePos() === $provider->getStartFilePos()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

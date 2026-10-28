@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FluidStan\Tests\Fixtures\ViewHelpers;
 
 use FluidStan\Tests\Fixtures\Model\Item;
+use TYPO3Fluid\Fluid\Core\Variables\StandardVariableProvider;
 use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 
 /**
@@ -28,6 +29,10 @@ final class DetectedViewHelper extends AbstractViewHelper
         if (!\is_string($value) || $value === '') {
             return '';
         }
+
+        // A provider for a lookup of its own, never installed on the rendering context: assigns nothing
+        $lookup = new StandardVariableProvider(['internal' => $value]);
+        $lookup->getByPath('internal');
 
         // Reached only for a non-empty value: the variable may stay unassigned
         $target = (string) $this->arguments['as'];

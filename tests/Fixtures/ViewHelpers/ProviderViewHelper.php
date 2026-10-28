@@ -25,10 +25,11 @@ class ProviderViewHelper extends AbstractViewHelper
     {
         $as = (string) $this->arguments['as'];
         $global = $this->renderingContext->getVariableProvider();
-        $this->renderingContext->setVariableProvider(new ScopedVariableProvider($global, new StandardVariableProvider([
+        $local = new StandardVariableProvider([
             'label' => 'provided',
             $as => new Item('Provided', 2),
-        ])));
+        ]);
+        $this->renderingContext->setVariableProvider(new ScopedVariableProvider($global, $local));
         $content = $this->renderChildren();
         $this->renderingContext->setVariableProvider($global);
         return $content;
