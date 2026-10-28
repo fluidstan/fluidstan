@@ -15,5 +15,5 @@
 <fv:scoped value="x">{scoped.nonexistent}</fv:scoped>
 <fv:provider as="prov">{prov.nonexistent} {label.length}</fv:provider>
 {scoped} {prov} {label}
-<f:section name="Scoped"><f:alias map="{title: 1}">{title.length}</f:alias>{title.length}</f:section>
+<f:section name="Scoped"><f:variable name="n" value="{0: 'a'}" /><f:section name="Nested">nested</f:section><f:alias map="{n: 1}">{n.length}</f:alias>{n.0}</f:section>
 </html>

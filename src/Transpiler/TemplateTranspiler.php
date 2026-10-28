@@ -538,12 +538,14 @@ final class TemplateTranspiler
             $preamble[] = $this->mark($this->assignVariable($root, $this->call('variable', [$this->string($root)])), $line);
         }
 
+        // Nested sections happen; the outer one is still a section afterwards
+        $wasInSection = $this->inSection;
         $this->inSection = true;
         $closure = new Closure([
             'stmts' => array_merge($preamble, $this->emitBlock($node->getChildNodes())),
             'returnType' => new Identifier('void'),
         ]);
-        $this->inSection = false;
+        $this->inSection = $wasInSection;
         $this->referencedRoots = $outerRoots;
         return [$this->mark(new Expression(new Assign($this->variable('__section_' . $name), $closure)), $line)];
     }

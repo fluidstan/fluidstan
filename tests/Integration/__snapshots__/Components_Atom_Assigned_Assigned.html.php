@@ -96,19 +96,24 @@ function fluidstan_template_HASH($title): void
     // fluid:18
     $__section_Scoped = function (): void {
         // fluid:18
-        $title = \FluidStan\Runtime\F::variable('title');
+        $n = \FluidStan\Runtime\F::variable('n');
         // fluid:18
-        $__scope1_title = $title;
+        $n = [0 => 'a'];
+        // fluid:18
+        $__section_Nested = function (): void {
+        };
+        // fluid:18
+        $__scope1_n = $n;
         // fluid:18
         {
             // fluid:18
-            $title = 1;
+            $n = 1;
             // fluid:18
-            \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($title, 'length'));
+            \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($n, 'length'));
         }
         // fluid:18
-        $title = $__scope1_title;
+        $n = $__scope1_n;
         // fluid:18
-        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($title, 'length'));
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($n, '0'));
     };
 }

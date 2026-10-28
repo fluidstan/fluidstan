@@ -23,6 +23,7 @@ use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Block;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Foreach_;
+use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\NodeVisitorAbstract;
@@ -54,6 +55,9 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
 
     private int $loops = 0;
 
+    /** @var array<string, true> every variable name the generated code uses, which a backup must not reuse */
+    private array $used = [];
+
     /**
      * @param array<string, true> $assigned PHP variable names that have a value before the body, such as the arguments
      */
@@ -74,6 +78,22 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
         }
 
         return [...$preamble, ...$this->traverse($statements)];
+    }
+
+    /**
+     * @param array<Node> $nodes
+     * @return array<Node>|null
+     */
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->used = [];
+        foreach ((new NodeFinder())->findInstanceOf($nodes, Variable::class) as $variable) {
+            if (\is_string($variable->name)) {
+                $this->used[$variable->name] = true;
+            }
+        }
+
+        return null;
     }
 
     public function enterNode(Node $node): int|Node|null
@@ -136,9 +156,13 @@ final class AdditionalVariableRouter extends NodeVisitorAbstract
     {
         $pre = [];
         $post = [];
-        ++$this->loops;
         foreach ($names as $name) {
-            $backup = new Variable(\sprintf('__backup%d_%s', $this->loops, $name));
+            // Fluid 5 rejects identifiers starting with "_", Fluid 4 does not: skip the names the code uses
+            do {
+                $backupName = \sprintf('__backup%d_%s', ++$this->loops, $name);
+            } while (isset($this->used[$backupName]));
+
+            $backup = new Variable($backupName);
             $pre[] = new Expression(new Assign($backup, new Variable($name)));
             $post[] = new Expression(new Assign(new Variable($name), $backup));
         }
