@@ -53,21 +53,20 @@ final class ViewHelperAssignments
     }
 
     /**
-     * The entries for the class and its ancestors
+     * The entries for the class and its ancestors, a subclass overriding its parents whatever the
+     * order of the map.
      *
      * @param array<string, array<string, array{type: string, scope: string}>> $map
      * @return array<string, array{type: string, scope: string}>
      */
     private function inherited(string $viewHelperClass, array $map): array
     {
-        $assignments = [];
-        foreach ($map as $class => $variables) {
-            if (is_a($viewHelperClass, $class, true)) {
-                $assignments = array_merge($assignments, $variables);
-            }
-        }
+        $matching = array_filter($map, static fn(string $class): bool => is_a($viewHelperClass, $class, true), ARRAY_FILTER_USE_KEY);
+        // The more of the matching classes a class is a subtype of, the more specific it is
+        $specificity = static fn(string $class): int => \count(array_filter(array_keys($matching), static fn(string $other): bool => is_a($class, $other, true)));
+        uksort($matching, static fn(string $a, string $b): int => $specificity($a) <=> $specificity($b));
 
-        return $assignments;
+        return array_merge(...array_values($matching));
     }
 
     /**

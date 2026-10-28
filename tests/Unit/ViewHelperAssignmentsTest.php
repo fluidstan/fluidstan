@@ -45,6 +45,25 @@ final class ViewHelperAssignmentsTest extends TestCase
         $this->assertSame(['{target}' => ['type' => 'string', 'scope' => 'template']], (new ViewHelperAssignments())->forViewHelper($child::class));
     }
 
+    public function testSubclassOverridesParentsWhateverTheOrderOfTheMap(): void
+    {
+        $child = new class extends AssignViewHelper {};
+        $parent = [AssignViewHelper::class => ['shared' => ['type' => 'string', 'scope' => 'template'], 'inherited' => ['type' => 'int', 'scope' => 'template']]];
+        $own = [$child::class => ['shared' => ['type' => 'non-empty-string', 'scope' => 'children']]];
+        $expected = ['shared' => ['type' => 'non-empty-string', 'scope' => 'children'], 'inherited' => ['type' => 'int', 'scope' => 'template']];
+
+        $cases = [
+            'configured, parent first' => new ViewHelperAssignments($parent + $own),
+            'configured, child first' => new ViewHelperAssignments($own + $parent),
+            'detected, child first' => new ViewHelperAssignments([], $own + $parent),
+        ];
+        foreach ($cases as $case => $assignments) {
+            $this->assertSame($expected, array_intersect_key($assignments->forViewHelper($child::class), $expected), $case);
+        }
+
+        $this->assertSame($parent[AssignViewHelper::class], array_intersect_key((new ViewHelperAssignments($own + $parent))->forViewHelper(AssignViewHelper::class), $expected), "the parent does not see the child's entries");
+    }
+
     public function testUnknownClassHasNoAssignments(): void
     {
         $this->assertSame([], (new ViewHelperAssignments())->forViewHelper('Nope\\ViewHelper'));
