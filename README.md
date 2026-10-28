@@ -142,7 +142,18 @@ and `@var` in the template overrides both.
 
 `f:variable`, `f:alias`, `f:cycle`, `f:for` and `f:groupedFor` are the ViewHelpers Fluid ships that put
 variables into a template, and FluidStan knows them. A ViewHelper of your own or of an extension may do
-the same through the variable provider, which nothing declares. Tell FluidStan in `fluidstan.neon`:
+the same through the variable provider. FluidStan finds that out by itself: before the templates are
+analysed, PHPStan runs once over the classes of the ViewHelpers they use and records every `add()` and
+`addAll()` on a variable provider, with the type of the value. A constant name is taken as is; a name
+that comes from an argument of the ViewHelper, through casts, local variables or a `toString()`-like
+helper, becomes that argument, so `$provider->add($this->arguments['target'], ...)` assigns the
+variable the call's `target` argument names, or the argument's default. An assignment that is not
+reached on every path, after an early `return` or inside a condition, may leave the variable unassigned,
+which in Fluid means `null`, so its type gets `|null`. The pass is cached by the ViewHelper files and
+only runs again when one of them changed.
+
+Where detection cannot follow the code, the name is computed or the ViewHelper delegates to a service,
+or where it is more cautious than you know to be true, declare the assignment in `fluidstan.neon`:
 
 ```neon
 parameters:
@@ -164,10 +175,10 @@ final class ClassBuilderViewHelper extends AbstractViewHelper
 ```
 
 `{target}` resolves to the call's `target` argument, or to the argument's default when the call omits
-it; a call whose argument is not a constant string assigns nothing. Subclasses inherit both the tags
-and the configuration, and the configuration wins over a tag. After the call the variable is local,
-with everything that follows from that: its type is the declared one, and a read before the first
-call is still reported.
+it; a call whose argument is not a constant string assigns nothing. Subclasses inherit detected and
+declared assignments alike. The configuration wins over a tag, and a tag wins over detection. After the
+call the variable is local, with everything that follows from that: its type is the declared one, and a
+read before the first call is still reported.
 
 ## Conditions
 

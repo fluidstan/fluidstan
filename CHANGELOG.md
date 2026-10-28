@@ -5,10 +5,14 @@
 ### Added
 
 - **Variables assigned by ViewHelpers.** A ViewHelper that puts a variable into the template through the
-  variable provider can be declared, in `fluidstan.neon` under `viewHelperAssignments` for any class, or
-  with a `@fluidstan-assigns` tag in the ViewHelper's docblock. `{target}` names the variable after an
-  argument of the call, with the argument's default. After the call the variable is local and typed as
-  declared. Fluid's own assigning ViewHelpers were known already.
+  variable provider is detected: PHPStan runs once over the classes of the ViewHelpers the templates
+  use, finds every `add()` and `addAll()` on a variable provider and records the type of the value. A
+  name that comes from an argument of the ViewHelper is traced back to it, an assignment that is not
+  reached on every path gets `|null`, and the pass is cached by the ViewHelper files. Where that is not
+  enough, the assignment can be declared in `fluidstan.neon` under `viewHelperAssignments` for any
+  class, or with a `@fluidstan-assigns` tag in the ViewHelper's docblock; `{target}` names the variable
+  after an argument of the call, with the argument's default. After the call the variable is local and
+  typed accordingly. Fluid's own assigning ViewHelpers were known already.
 
 ## 0.2.0
 

@@ -6,9 +6,9 @@ namespace FluidStan\Transpiler;
 
 /**
  * Which template variables a ViewHelper assigns when it is called, and their types. Fluid offers
- * no way to declare that, so it comes from two sources: the "viewHelperAssignments" map in
- * fluidstan.neon, which also covers third-party ViewHelpers, and `@fluidstan-assigns` tags in the
- * ViewHelper's class docblock. The configuration wins over the tags.
+ * no way to declare that, so it comes from three sources: what the detection pass found in the
+ * ViewHelper's code, `@fluidstan-assigns` tags in the ViewHelper's class docblock, and the
+ * "viewHelperAssignments" map in fluidstan.neon, each winning over the previous one.
  *
  * A variable name is literal, or `{argument}` for the value of that argument at the call site,
  * with the argument's default when the call omits it.
@@ -22,24 +22,35 @@ final class ViewHelperAssignments
 
     /**
      * @param array<string, array<string, string>> $configured ViewHelper class => variable name or {argument} => PHPDoc type
+     * @param array<string, array<string, string>> $detected the same, found in the ViewHelpers' code
      */
-    public function __construct(private readonly array $configured = []) {}
+    public function __construct(
+        private readonly array $configured = [],
+        private readonly array $detected = [],
+    ) {}
 
     /**
      * @return array<string, string> variable name or {argument} => PHPDoc type
      */
     public function forViewHelper(string $viewHelperClass): array
     {
-        return $this->cache[$viewHelperClass] ??= array_merge($this->fromDocBlocks($viewHelperClass), $this->fromConfiguration($viewHelperClass));
+        return $this->cache[$viewHelperClass] ??= array_merge(
+            $this->inherited($viewHelperClass, $this->detected),
+            $this->fromDocBlocks($viewHelperClass),
+            $this->inherited($viewHelperClass, $this->configured),
+        );
     }
 
     /**
+     * The entries for the class and its ancestors
+     *
+     * @param array<string, array<string, string>> $map
      * @return array<string, string>
      */
-    private function fromConfiguration(string $viewHelperClass): array
+    private function inherited(string $viewHelperClass, array $map): array
     {
         $assignments = [];
-        foreach ($this->configured as $class => $variables) {
+        foreach ($map as $class => $variables) {
             if (is_a($viewHelperClass, $class, true)) {
                 $assignments = array_merge($assignments, $variables);
             }

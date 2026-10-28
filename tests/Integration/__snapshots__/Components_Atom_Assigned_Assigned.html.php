@@ -56,4 +56,23 @@ function fluidstan_template_HASH($title): void
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($item, 'nonexistent'));
     // fluid:10
     \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'missing'));
+    // fluid:11
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'scalar|\Stringable', true, 'fv:detected')], 'fv:detected'));
+    // fluid:12
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::viewHelper(\FluidStan\Tests\Fixtures\ViewHelpers\DetectedViewHelper::class, ['value' => \FluidStan\Runtime\F::arg('value', $title, 'scalar|\Stringable', true, 'fv:detected'), 'as' => \FluidStan\Runtime\F::arg('as', 'loud', 'scalar|\Stringable', false, 'fv:detected')], 'fv:detected'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'detected'), 'title'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'detected'), 'nonexistent'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'count'), 'digits'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'upper'), 'length'));
+    // fluid:13
+    \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'loud'), 'length'));
+    // fluid:14
+    foreach (\FluidStan\Runtime\F::each(\FluidStan\Runtime\F::additionalVariable(\FluidStan\Tests\Fixtures\Components\ComponentCollection::class, 'atom.assigned', 'flags')) as $flag) {
+        // fluid:14
+        \FluidStan\Runtime\F::output(\FluidStan\Runtime\F::get($flag, 'nonexistent'));
+    }
 }

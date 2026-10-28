@@ -8,4 +8,8 @@
 <fv:load uid="1" />
 <span class="{class}" data-other="{other}" data-inline="{inline}">{item.title}</span>
 {class.length} {other.length} {inline.length} {item.nonexistent} {missing}
+<fv:detected value="{title}" />
+<fv:detected value="{title}" as="loud" />
+{detected.title} {detected.nonexistent} {count.digits} {upper.length} {loud.length}
+<f:for each="{flags}" as="flag">{flag.nonexistent}</f:for>
 </html>

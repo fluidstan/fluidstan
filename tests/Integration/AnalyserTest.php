@@ -29,10 +29,15 @@ final class AnalyserTest extends TestCase
             $result->diagnostics->all(),
         );
         $this->assertSame([
-            // variables assigned by ViewHelpers are typed from the tag or the configuration
+            // variables assigned by ViewHelpers are typed from the tag, the configuration or the code
             'Assigned.html:10 fluidstan.property.unresolvable',
             'Assigned.html:10 fluidstan.property.unresolvable',
             'Assigned.html:10 variable.undefined',
+            'Assigned.html:13 fluidstan.property.unresolvable',
+            'Assigned.html:13 fluidstan.property.unresolvable',
+            'Assigned.html:13 fluidstan.property.unresolvable',
+            'Assigned.html:14 fluidstan.property.unresolvable',
+            'Assigned.html:14 fluidstan.property.unresolvable',
             // a component without arguments still has its collection's variables
             'Logo.html:2 fluidstan.property.unresolvable',
             'Logo.html:2 variable.undefined',
