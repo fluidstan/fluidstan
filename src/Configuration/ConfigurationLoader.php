@@ -66,6 +66,18 @@ final class ConfigurationLoader
             throw new ConfigurationException('"environment" must be a class name.');
         }
 
+        $viewHelperAssignments = [];
+        foreach ($this->stringMap($parameters['viewHelperAssignments'] ?? [], 'viewHelperAssignments') as $class => $variables) {
+            $viewHelperAssignments[$class] = [];
+            foreach ($this->stringMap($variables, 'viewHelperAssignments.' . $class) as $name => $type) {
+                if (!\is_string($type)) {
+                    throw new ConfigurationException(\sprintf('"viewHelperAssignments.%s.%s" must be a PHPDoc type.', $class, $name));
+                }
+
+                $viewHelperAssignments[$class][$name] = $type;
+            }
+        }
+
         return new Configuration(
             rootDir: $rootDir,
             paths: $this->resolvePaths($this->stringList($parameters['paths'] ?? [], 'paths'), $rootDir),
@@ -77,6 +89,7 @@ final class ConfigurationLoader
             phpstanParameters: $this->stringMap($phpstan['parameters'] ?? [], 'phpstan.parameters'),
             tmpDir: $this->resolvePath(\is_string($tmpDir) ? $tmpDir : '.cache/fluidstan', $rootDir),
             environment: $environment,
+            viewHelperAssignments: $viewHelperAssignments,
         );
     }
 

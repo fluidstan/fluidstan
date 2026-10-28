@@ -17,6 +17,7 @@ parameters:
     excludePaths:
         - tests/Fixtures/Components
         - tests/Fixtures/Documented
+        - tests/Fixtures/ViewHelpers
         - tests/Fixtures/Templates
         - tests/Integration/__snapshots__
     tmpDir: .cache/phpstan

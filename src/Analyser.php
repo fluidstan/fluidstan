@@ -13,6 +13,7 @@ use FluidStan\Runner\PhpStanRunner;
 use FluidStan\Runner\ResultMapper;
 use FluidStan\Transpiler\GeneratedFile;
 use FluidStan\Transpiler\TemplateTranspiler;
+use FluidStan\Transpiler\ViewHelperAssignments;
 
 final class Analyser
 {
@@ -34,7 +35,7 @@ final class Analyser
         $diagnostics = new DiagnosticCollection();
         $environment = new FluidEnvironment($this->configuration);
         $files = (new TemplateFinder())->find($environment->resolvePaths($this->configuration->paths), $this->configuration->suffixes);
-        $transpiler = new TemplateTranspiler();
+        $transpiler = new TemplateTranspiler(assignments: new ViewHelperAssignments($this->configuration->viewHelperAssignments));
 
         $generatedDir = $this->configuration->tmpDir . '/generated';
         $this->resetDirectory($generatedDir);

@@ -1,0 +1,11 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" xmlns:fv="http://typo3.org/ns/FluidStan/Tests/Fixtures/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:argument name="title" type="string" />
+
+<fv:assign value="a-badge" />
+<fv:assign value="a-badge--{title}" target="other" />
+<fv:assign value="x" target="{title}" />
+{fv:assign(value: 'inline', target: 'inline')}
+<fv:load uid="1" />
+<span class="{class}" data-other="{other}" data-inline="{inline}">{item.title}</span>
+{class.length} {other.length} {inline.length} {item.nonexistent} {missing}
+</html>

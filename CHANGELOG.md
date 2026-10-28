@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Variables assigned by ViewHelpers.** A ViewHelper that puts a variable into the template through the
+  variable provider can be declared, in `fluidstan.neon` under `viewHelperAssignments` for any class, or
+  with a `@fluidstan-assigns` tag in the ViewHelper's docblock. `{target}` names the variable after an
+  argument of the call, with the argument's default. After the call the variable is local and typed as
+  declared. Fluid's own assigning ViewHelpers were known already.
+
 ## 0.2.0
 
 Components get the variables their collection provides, `f:if` conditions narrow types, and the

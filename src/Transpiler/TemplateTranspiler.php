@@ -105,6 +105,7 @@ final class TemplateTranspiler
     public function __construct(
         private readonly TypeMapper $typeMapper = new TypeMapper(),
         private readonly Annotations $annotations = new Annotations(),
+        private readonly ViewHelperAssignments $assignments = new ViewHelperAssignments(),
     ) {
         $this->locations = new NodeLocations();
         $this->diagnostics = new DiagnosticCollection();
@@ -458,6 +459,40 @@ final class TemplateTranspiler
         // Fluid casts children to string only when there are several of them
         $statements = $this->emitBlock($node->getChildNodes(), \count($node->getChildNodes()) === 1);
         $statements[] = $this->mark($this->output($this->viewHelperExpr($node, false)), $line);
+        return array_merge($statements, $this->assignedByViewHelper($node));
+    }
+
+    /**
+     * The variables the ViewHelper assigns to the template, declared in the configuration or in its
+     * docblock, as assignments after the call. A name given by an argument whose value is not a
+     * constant string cannot be resolved and is skipped.
+     *
+     * @return list<Stmt>
+     */
+    private function assignedByViewHelper(ViewHelperNode $node): array
+    {
+        $line = $this->lineOf($node);
+        $statements = [];
+        foreach ($this->assignments->forViewHelper($node->getViewHelperClassName()) as $name => $type) {
+            if (preg_match('/^\{(\w+)\}$/', $name, $matches) === 1) {
+                $argument = $matches[1];
+                $arguments = $node->getArguments();
+                $definitions = $node->getArgumentDefinitions();
+                $name = match (true) {
+                    \array_key_exists($argument, $arguments) => $this->constantString($arguments[$argument]),
+                    isset($definitions[$argument]) => $this->constantString($definitions[$argument]->getDefaultValue()),
+                    default => null,
+                };
+                if ($name === null) {
+                    continue;
+                }
+            }
+
+            $statement = $this->assignVariable($name, $this->call('variable', [$this->string($name)]));
+            $statement->setDocComment(new Doc(\sprintf('/** @var %s $%s */', $this->docType($type), VariableNames::php($name))));
+            $statements[] = $this->mark($statement, $line);
+        }
+
         return $statements;
     }
 

@@ -38,6 +38,7 @@ final class ConfigurationLoaderTest extends TestCase
             'tmpDir' => 'var/fluidstan',
             'environment' => 'My\\Environment',
             'phpstan' => ['binary' => 'bin/phpstan', 'includes' => ['phpstan.neon'], 'parameters' => ['checkFoo' => true]],
+            'viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => 'My\\Item', '{target}' => 'string']],
         ], '/project');
 
         $this->assertSame(['/project/Components', '/abs/Templates', 'EXT:site/Resources'], $configuration->paths);
@@ -49,6 +50,7 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame('/project/bin/phpstan', $configuration->phpstanBinary);
         $this->assertSame(['/project/phpstan.neon'], $configuration->phpstanIncludes);
         $this->assertSame(['checkFoo' => true], $configuration->phpstanParameters);
+        $this->assertSame(['My\\LoadViewHelper' => ['item' => 'My\\Item', '{target}' => 'string']], $configuration->viewHelperAssignments);
     }
 
     public function testLoadsNeonRelativeToTheConfigFile(): void
@@ -58,7 +60,14 @@ final class ConfigurationLoaderTest extends TestCase
 
         $this->assertSame($root, $configuration->rootDir);
         $this->assertSame([$root . '/Components', $root . '/Documented', $root . '/Templates'], $configuration->paths);
-        $this->assertSame(['fs' => [ComponentCollection::class], 'fd' => [DocumentedCollection::class]], array_diff_key($configuration->namespaces, ['f' => true]));
+        $this->assertSame(['fs' => [ComponentCollection::class], 'fd' => [DocumentedCollection::class], 'fv' => ['FluidStan\\Tests\\Fixtures\\ViewHelpers']], array_diff_key($configuration->namespaces, ['f' => true]));
+    }
+
+    public function testViewHelperAssignmentTypesMustBeStrings(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('"viewHelperAssignments.My\\LoadViewHelper.item" must be a PHPDoc type.');
+        (new ConfigurationLoader())->fromParameters(['viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => ['nope']]]], '/project');
     }
 
     public function testPhpStanLevelIsRejected(): void

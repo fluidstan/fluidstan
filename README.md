@@ -138,6 +138,37 @@ return types, so a collection that builds `['component' => ['class' => ..., 'pre
 `{component.class}` the type `string`. A `@return` array shape in the method's PHPDoc takes precedence,
 and `@var` in the template overrides both.
 
+## Variables assigned by ViewHelpers
+
+`f:variable`, `f:alias`, `f:cycle`, `f:for` and `f:groupedFor` are the ViewHelpers Fluid ships that put
+variables into a template, and FluidStan knows them. A ViewHelper of your own or of an extension may do
+the same through the variable provider, which nothing declares. Tell FluidStan in `fluidstan.neon`:
+
+```neon
+parameters:
+    viewHelperAssignments:
+        # ViewHelper class => variable => PHPDoc type; {target} names the variable after the "target" argument
+        My\Site\ViewHelpers\ClassBuilderViewHelper:
+            '{target}': string
+        My\Site\ViewHelpers\LoadProductViewHelper:
+            product: My\Site\Domain\Model\Product
+```
+
+For your own ViewHelpers the same can live in the class docblock, where it is kept next to the code:
+
+```php
+/**
+ * @fluidstan-assigns {target} string
+ */
+final class ClassBuilderViewHelper extends AbstractViewHelper
+```
+
+`{target}` resolves to the call's `target` argument, or to the argument's default when the call omits
+it; a call whose argument is not a constant string assigns nothing. Subclasses inherit both the tags
+and the configuration, and the configuration wins over a tag. After the call the variable is local,
+with everything that follows from that: its type is the declared one, and a read before the first
+call is still reported.
+
 ## Conditions
 
 Inside `<f:if condition="{item}">` the type of `item` loses `null`, `false`, empty strings and

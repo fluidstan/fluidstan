@@ -14,6 +14,7 @@ final readonly class Configuration
      * @param list<string> $phpstanIncludes Additional PHPStan config files included into the generated config
      * @param array<string, mixed> $phpstanParameters Additional PHPStan parameters merged into the generated config
      * @param string|null $environment Class implementing FluidStan\Environment\EnvironmentInterface
+     * @param array<string, array<string, string>> $viewHelperAssignments ViewHelper class => variable name or {argument} => PHPDoc type
      */
     public function __construct(
         public string $rootDir,
@@ -26,6 +27,7 @@ final readonly class Configuration
         public array $phpstanParameters,
         public string $tmpDir,
         public ?string $environment = null,
+        public array $viewHelperAssignments = [],
     ) {}
 
     /**
@@ -33,11 +35,11 @@ final readonly class Configuration
      */
     public function withPaths(array $paths): self
     {
-        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment);
+        return new self($this->rootDir, $paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $this->tmpDir, $this->environment, $this->viewHelperAssignments);
     }
 
     public function withTmpDir(string $tmpDir): self
     {
-        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment);
+        return new self($this->rootDir, $this->paths, $this->suffixes, $this->namespaces, $this->bootstrapFiles, $this->phpstanBinary, $this->phpstanIncludes, $this->phpstanParameters, $tmpDir, $this->environment, $this->viewHelperAssignments);
     }
 }
