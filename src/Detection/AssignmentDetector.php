@@ -7,14 +7,16 @@ namespace FluidStan\Detection;
 use FluidStan\Configuration\Configuration;
 use FluidStan\PhpStan\Rules\ViewHelperAssignmentRule;
 use FluidStan\Runner\PhpStanRunner;
+use FluidStan\Transpiler\TemplateTranspiler;
 use FluidStan\Transpiler\ViewHelperAssignments;
 use Nette\Neon\Neon;
 
 /**
- * Finds out which template variables the project's ViewHelpers assign by running PHPStan over
- * their classes with the detection rule, before the templates are transpiled. ViewHelpers of Fluid
- * itself are left out: the transpiler models the assigning ones. The result is cached by the files
- * involved, so the pass only runs when a ViewHelper changed.
+ * Finds out which template variables the ViewHelpers assign by running PHPStan over their classes
+ * with the detection rule, before the templates are transpiled. Only the ViewHelpers the transpiler
+ * turns into PHP constructs itself (f:for, f:variable, ...) are left out; any other ViewHelper,
+ * Fluid's own included, is detected. The result is cached by the files involved, so the pass only
+ * runs when a ViewHelper changed.
  */
 final readonly class AssignmentDetector
 {
@@ -129,7 +131,7 @@ final readonly class AssignmentDetector
     }
 
     /**
-     * The files of the classes, their parents and traits, without Fluid's own ViewHelpers.
+     * The files of the classes, their parents and traits, without the ViewHelpers the transpiler models.
      *
      * @param list<string> $classes
      * @return list<string>
@@ -138,14 +140,14 @@ final readonly class AssignmentDetector
     {
         $files = [];
         foreach ($classes as $class) {
-            if (!class_exists($class)) {
+            if (!class_exists($class) || $this->isModelled($class)) {
                 continue;
             }
 
             for ($reflection = new \ReflectionClass($class); $reflection instanceof \ReflectionClass; $reflection = $reflection->getParentClass()) {
                 foreach ([$reflection, ...self::traits($reflection)] as $declaring) {
                     $file = $declaring->getFileName();
-                    if ($file !== false && !str_starts_with($declaring->getName(), 'TYPO3Fluid\\Fluid\\')) {
+                    if ($file !== false) {
                         $files[$file] = true;
                     }
                 }
@@ -155,6 +157,17 @@ final readonly class AssignmentDetector
         $files = array_keys($files);
         sort($files);
         return $files;
+    }
+
+    private function isModelled(string $class): bool
+    {
+        foreach (TemplateTranspiler::ASSIGNING_VIEW_HELPERS as $modelled) {
+            if (is_a($class, $modelled, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

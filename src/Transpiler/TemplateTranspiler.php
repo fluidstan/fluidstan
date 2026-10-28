@@ -109,6 +109,20 @@ final class TemplateTranspiler
 
     private ?ParsedTemplate $template = null;
 
+    /**
+     * Fluid's ViewHelpers that assign template variables and are turned into PHP constructs with
+     * their exact types: a foreach, an assignment, a scoped block. Detection skips them.
+     *
+     * @var list<class-string>
+     */
+    public const ASSIGNING_VIEW_HELPERS = [
+        ForViewHelper::class,
+        GroupedForViewHelper::class,
+        CycleViewHelper::class,
+        VariableViewHelper::class,
+        AliasViewHelper::class,
+    ];
+
     public function __construct(
         private readonly TypeMapper $typeMapper = new TypeMapper(),
         private readonly Annotations $annotations = new Annotations(),

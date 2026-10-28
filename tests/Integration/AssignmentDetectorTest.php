@@ -15,6 +15,7 @@ use FluidStan\Tests\Fixtures\ViewHelpers\ScopedViewHelper;
 use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use TYPO3Fluid\Fluid\ViewHelpers\AliasViewHelper;
+use TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper;
 
 /**
  * Runs PHPStan with the detection rule over the fixture ViewHelpers.
@@ -26,7 +27,8 @@ final class AssignmentDetectorTest extends TestCase
     public function testDetectsNamesTypesAndScopesAndCachesThem(): void
     {
         $detector = $this->detector();
-        $classes = [AssignViewHelper::class, DetectedViewHelper::class, ScopedViewHelper::class, ProviderViewHelper::class, AliasViewHelper::class, 'Nope\\ViewHelper'];
+        // f:alias is modelled by the transpiler and skipped; f:count is Fluid's but analysed like any other, and assigns nothing
+        $classes = [AssignViewHelper::class, DetectedViewHelper::class, ScopedViewHelper::class, ProviderViewHelper::class, AliasViewHelper::class, CountViewHelper::class, 'Nope\\ViewHelper'];
         $expected = [
             AssignViewHelper::class => ['{target}' => ['type' => 'string', 'scope' => 'template']],
             DetectedViewHelper::class => [
