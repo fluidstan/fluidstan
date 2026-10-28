@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FluidStan\Detection;
 
 use FluidStan\Configuration\Configuration;
+use FluidStan\InstalledVersion;
 use FluidStan\PhpStan\Rules\ViewHelperAssignmentRule;
 use FluidStan\Runner\PhpStanRunner;
 use FluidStan\Transpiler\TemplateTranspiler;
@@ -15,13 +16,17 @@ use Nette\Neon\Neon;
  * Finds out which template variables the ViewHelpers assign by running PHPStan over their classes
  * with the detection rule, before the templates are transpiled. Only the ViewHelpers the transpiler
  * turns into PHP constructs itself (f:for, f:variable, ...) are left out; any other ViewHelper,
- * Fluid's own included, is detected. The result is cached by the files involved, so the pass only
- * runs when a ViewHelper changed.
+ * Fluid's own included, is detected. The result is cached per set of ViewHelper files, keyed by their
+ * content and the FluidStan and PHPStan versions, so the pass only runs when one of them changed.
+ * Types a ViewHelper takes from other files, such as a repository's return type, are not tracked.
  */
 final readonly class AssignmentDetector
 {
     /** Changes whenever the cached data changes shape */
-    private const FORMAT = '3';
+    private const FORMAT = '4';
+
+    /** Cache files older than this are removed when a new one is written */
+    private const PRUNE_AFTER_SECONDS = 7 * 24 * 3600;
 
     public function __construct(
         private Configuration $configuration,
@@ -42,16 +47,48 @@ final readonly class AssignmentDetector
             return [];
         }
 
-        $cacheFile = $this->configuration->tmpDir . '/viewhelper-assignments.json';
-        $key = sha1(self::FORMAT . "\n" . implode("\n", array_map(static fn(string $file): string => $file . ':' . filemtime($file) . ':' . filesize($file), $files)));
+        $cacheFile = $this->configuration->tmpDir . '/viewhelper-assignments-' . $this->cacheKey($files) . '.json';
         $cached = is_file($cacheFile) ? json_decode((string) file_get_contents($cacheFile), true) : null;
-        if (\is_array($cached) && ($cached['key'] ?? null) === $key && \is_array($cached['assignments'] ?? null)) {
+        if (\is_array($cached) && \is_array($cached['assignments'] ?? null)) {
             return $this->stringMaps($cached['assignments']);
         }
 
         $assignments = $this->run($files);
-        file_put_contents($cacheFile, json_encode(['key' => $key, 'assignments' => $assignments], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->write($cacheFile, ['files' => $files, 'assignments' => $assignments]);
         return $assignments;
+    }
+
+    /**
+     * @param list<string> $files
+     */
+    private function cacheKey(array $files): string
+    {
+        $parts = [self::FORMAT, InstalledVersion::of('fluidstan/fluidstan'), InstalledVersion::of('phpstan/phpstan')];
+        foreach ($files as $file) {
+            $parts[] = $file . ':' . sha1_file($file);
+        }
+
+        return sha1(implode("\n", $parts));
+    }
+
+    /**
+     * Writes the cache file atomically, so a concurrent run never reads a half-written file, and
+     * removes stale files of other sets.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function write(string $cacheFile, array $data): void
+    {
+        $temporary = $cacheFile . '.' . uniqid('', true) . '.tmp';
+        file_put_contents($temporary, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        rename($temporary, $cacheFile);
+
+        $others = glob(\dirname($cacheFile) . '/viewhelper-assignments-*.json');
+        foreach ($others === false ? [] : $others as $other) {
+            if ($other !== $cacheFile && filemtime($other) < time() - self::PRUNE_AFTER_SECONDS) {
+                unlink($other);
+            }
+        }
     }
 
     /**

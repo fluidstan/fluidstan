@@ -149,8 +149,10 @@ that comes from an argument of the ViewHelper, through casts, local variables or
 helper, becomes that argument, so `$provider->add($this->arguments['target'], ...)` assigns the
 variable the call's `target` argument names, or the argument's default. An assignment that is not
 reached on every path, after an early `return` or inside a condition, may leave the variable unassigned,
-which in Fluid means `null`, so its type gets `|null`. The pass is cached by the ViewHelper files and
-only runs again when one of them changed.
+which in Fluid means `null`, so its type gets `|null`. The pass is cached in `tmpDir` per set of
+ViewHelper files, by their content and the FluidStan and PHPStan versions, and only runs again when one
+of them changed. A type a ViewHelper takes from another file, such as a repository's return type, is not
+tracked: after such a change, touch the ViewHelper or delete the cache.
 
 A ViewHelper may also give a variable to its children only, the way `f:alias` and `f:cycle` do. Both
 forms Fluid offers are detected and modelled as Fluid behaves: a `ScopedVariableProvider` around a

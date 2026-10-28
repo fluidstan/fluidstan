@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FluidStan\Console;
 
-use Composer\InstalledVersions;
+use FluidStan\InstalledVersion;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
 
@@ -19,15 +19,8 @@ final class Application extends BaseApplication
         $this->setDefaultCommand('analyse', true);
     }
 
-    /**
-     * The version Composer installed, like PHPStan and twigstan report it; "unknown" outside Composer.
-     */
     private function version(): string
     {
-        if (!class_exists(InstalledVersions::class) || !InstalledVersions::isInstalled('fluidstan/fluidstan')) {
-            return 'unknown';
-        }
-
-        return InstalledVersions::getPrettyVersion('fluidstan/fluidstan') ?? 'unknown';
+        return InstalledVersion::of('fluidstan/fluidstan');
     }
 }

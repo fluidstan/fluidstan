@@ -14,6 +14,7 @@ use FluidStan\Tests\Fixtures\ViewHelpers\ProviderViewHelper;
 use FluidStan\Tests\Fixtures\ViewHelpers\ScopedViewHelper;
 use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\TestCase;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\ViewHelpers\AliasViewHelper;
 use TYPO3Fluid\Fluid\ViewHelpers\CountViewHelper;
 
@@ -47,56 +48,80 @@ final class AssignmentDetectorTest extends TestCase
             ScopedViewHelper::class => ['{as}' => ['type' => 'mixed', 'scope' => 'removed']],
         ];
 
-        $this->assertSame($expected, $detector->detect($classes), "Fluid's own ViewHelpers and unknown classes are skipped");
+        $this->assertSame($expected, $detector->detect($classes), "modelled ViewHelpers and unknown classes are skipped, Fluid's others find nothing");
 
-        $cached = $this->readCache();
+        [$cacheFile, $cached] = $this->readCache();
+        // the parents' files are analysed as well, here Fluid's AbstractViewHelper
+        $this->assertSame($this->filesOf([AssignViewHelper::class, DetectedViewHelper::class, ProviderViewHelper::class, ScopedViewHelper::class, AbstractViewHelper::class, CountViewHelper::class]), $cached['files'] ?? null);
         $cached['assignments'] = [ScopedViewHelper::class => ['{as}' => ['type' => 'cached', 'scope' => 'removed']]];
-        $this->writeCache($cached);
+        $this->writeCache($cacheFile, $cached);
         $this->assertSame($cached['assignments'], $detector->detect($classes), 'the same files hit the cache');
 
         $withLoad = $expected;
         $withLoad[LoadViewHelper::class] = ['item' => ['type' => Item::class, 'scope' => 'template']];
         ksort($withLoad);
         $this->assertSame($withLoad, $this->detector()->detect([...$classes, LoadViewHelper::class]), 'another set of files runs the detection again');
+        $this->assertCount(2, $this->cacheFiles(), 'each set of files has its own cache file');
         $this->assertSame([], $detector->detect([AliasViewHelper::class]), 'nothing to analyse');
     }
 
     public function testIgnoresAnUnreadableCache(): void
     {
-        $this->writeCache(['key' => 'stale', 'assignments' => ['X' => ['y' => 'not a map']]]);
         $expected = [AssignViewHelper::class => ['{target}' => ['type' => 'string', 'scope' => 'template']]];
         $this->assertSame($expected, $this->detector()->detect([AssignViewHelper::class]));
 
-        $cached = $this->readCache();
+        [$cacheFile, $cached] = $this->readCache();
         $cached['assignments'] = ['X' => 'broken', AssignViewHelper::class => ['{target}' => ['type' => 'string'], 'other' => 'x']];
-        $this->writeCache($cached);
+        $this->writeCache($cacheFile, $cached);
         $this->assertSame([], $this->detector()->detect([AssignViewHelper::class]), 'malformed cached entries are dropped');
+
+        file_put_contents($cacheFile, '{"assignments": ');
+        $this->assertSame($expected, $this->detector()->detect([AssignViewHelper::class]), 'a half-written file is analysed again');
+        $this->assertCount(1, $this->cacheFiles());
     }
 
     /**
-     * @return array<string, mixed>
+     * @return list<string>
+     */
+    private function cacheFiles(): array
+    {
+        $files = glob($this->tmpDir . '/viewhelper-assignments-*.json');
+        return $files === false ? [] : $files;
+    }
+
+    /**
+     * The only cache file and its content
+     *
+     * @return array{string, array<string, mixed>}
      */
     private function readCache(): array
     {
-        $this->assertFileExists($this->cacheFile());
-        $cached = json_decode((string) file_get_contents($this->cacheFile()), true);
+        $files = $this->cacheFiles();
+        $this->assertCount(1, $files);
+        $cached = json_decode((string) file_get_contents($files[0]), true);
         $this->assertIsArray($cached);
 
         /** @var array<string, mixed> $cached */
-        return $cached;
+        return [$files[0], $cached];
     }
 
     /**
      * @param array<string, mixed> $cached
      */
-    private function writeCache(array $cached): void
+    private function writeCache(string $cacheFile, array $cached): void
     {
-        file_put_contents($this->cacheFile(), json_encode($cached));
+        file_put_contents($cacheFile, json_encode($cached));
     }
 
-    private function cacheFile(): string
+    /**
+     * @param list<class-string> $classes
+     * @return list<string>
+     */
+    private function filesOf(array $classes): array
     {
-        return $this->tmpDir . '/viewhelper-assignments.json';
+        $files = array_map(static fn(string $class): string => (string) (new \ReflectionClass($class))->getFileName(), $classes);
+        sort($files);
+        return $files;
     }
 
     private function detector(): AssignmentDetector
