@@ -37,7 +37,8 @@ final class Analyser
     {
         $diagnostics = new DiagnosticCollection();
         $environment = new FluidEnvironment($this->configuration);
-        $files = (new TemplateFinder())->find($environment->resolvePaths($this->configuration->paths), $this->configuration->suffixes);
+        $paths = $environment->resolvePaths($this->configuration->paths);
+        $files = (new TemplateFinder())->find($paths, $this->configuration->suffixes);
 
         $generatedDir = $this->configuration->tmpDir . '/generated';
         $this->resetDirectory($generatedDir);
@@ -85,8 +86,9 @@ final class Analyser
             $diagnostics->merge((new ResultMapper())->map($result, $this->generatedFiles));
         }
 
-        // Only single files given: an ignoreErrors entry for another template matching nothing says nothing
-        $onlyFiles = array_filter($this->configuration->paths, static fn(string $path): bool => !is_file($path)) === [];
+        // Only single files given: an ignoreErrors entry for another template matching nothing says nothing.
+        // The resolved paths, so that a framework notation such as EXT: counts as the file it names.
+        $onlyFiles = array_filter($paths, static fn(string $path): bool => !is_file($path)) === [];
         $diagnostics = (new IgnoredErrors($this->configuration))->apply($diagnostics, $files, $onlyFiles);
 
         return new AnalysisResult($diagnostics, \count($files), $generatedDir);

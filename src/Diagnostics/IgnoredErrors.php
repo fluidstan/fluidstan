@@ -41,17 +41,20 @@ final readonly class IgnoredErrors
         }
 
         $errors = [];
+        $hasInternalErrors = false;
         foreach ($diagnostics as $diagnostic) {
             // A diagnostic without a template, PHPStan failing for instance, is not up for ignoring
             if ($diagnostic->file === '') {
                 $result->add($diagnostic);
+                $hasInternalErrors = true;
                 continue;
             }
 
             $errors[] = new Error($diagnostic->message, $diagnostic->file, $diagnostic->line, true, $diagnostic->file, null, $diagnostic->tip, null, null, $diagnostic->identifier);
         }
 
-        $processed = $initialized->process($errors, $onlyFiles, $analysedFiles, false);
+        // As in PHPStan: after an internal error, entries that match nothing are no news
+        $processed = $initialized->process($errors, $onlyFiles, $analysedFiles, $hasInternalErrors);
         foreach ($processed->getNotIgnoredErrors() as $error) {
             $result->add(new Diagnostic($error->getFilePath(), $error->getLine(), $error->getMessage(), $error->getIdentifier(), $error->getTip()));
         }

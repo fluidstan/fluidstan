@@ -51,11 +51,9 @@ final class IgnoredErrorsTest extends TestCase
             // a count of 2 against 3 occurrences: PHPStan ignores two, keeps the third and reports the mismatch
             $a . ':1 ignore.count',
             $a . ':3 variable.undefined',
-            // an entry with a path that matches nothing is reported at that path
-            $b . ':null ignore.unmatched',
+            // the unmatched #never# entry is not reported: PHPStan stays quiet about those after an internal error
             $b . ':3 fluidstan.other',
         ], array_map(static fn(Diagnostic $d): string => \sprintf('%s:%s %s', $d->file, $d->line ?? 'null', $d->identifier), $remaining->all()));
-        $this->assertStringContainsString('#never#', implode("\n", array_map(static fn(Diagnostic $d): string => $d->message, $remaining->all())));
     }
 
     public function testUnmatchedEntriesAreNotReportedForSingleFilesOrWhenTurnedOff(): void
@@ -76,6 +74,14 @@ final class IgnoredErrorsTest extends TestCase
         // the same per entry
         $perEntry = (new IgnoredErrors((new ConfigurationLoader())->fromParameters(['ignoreErrors' => [['message' => '#never#', 'path' => 'A.html', 'reportUnmatched' => false]]], $this->tmpDir)))->apply($diagnostics, [$a], false);
         $this->assertCount(1, $perEntry);
+
+        // after an internal error, as in PHPStan
+        $failed = new DiagnosticCollection();
+        $failed->merge($diagnostics);
+        $failed->add(new Diagnostic('', null, 'PHPStan failed', 'phpstan.internal'));
+
+        $afterInternal = (new IgnoredErrors((new ConfigurationLoader())->fromParameters($entries, $this->tmpDir)))->apply($failed, [$a], false);
+        $this->assertSame(['phpstan.internal', null], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $afterInternal->all()));
 
         $reported = (new IgnoredErrors((new ConfigurationLoader())->fromParameters($entries, $this->tmpDir)))->apply($diagnostics, [$a], false);
         $this->assertCount(2, $reported);
