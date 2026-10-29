@@ -6,3 +6,4 @@ parameters:
     bootstrapFiles:
         - ../../vendor/autoload.php
     tmpDir: ../../.cache/fluidstan-example
+    strict: true
