@@ -6,6 +6,7 @@ namespace FluidStan\Console;
 
 use FluidStan\Analyser;
 use FluidStan\Configuration\ConfigurationLoader;
+use FluidStan\Diagnostics\BaselineWriter;
 use FluidStan\Diagnostics\Diagnostic;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -32,6 +33,7 @@ final class AnalyseCommand extends Command
             ->addOption('configuration', 'c', InputOption::VALUE_REQUIRED, 'Path to fluidstan.neon')
             ->addOption('error-format', null, InputOption::VALUE_REQUIRED, 'table or json', 'table')
             ->addOption('no-phpstan', null, InputOption::VALUE_NONE, 'Only parse and transpile; skip the PHPStan run')
+            ->addOption('generate-baseline', 'b', InputOption::VALUE_OPTIONAL, 'Write the current errors as ignoreErrors to a baseline file (default: fluidstan-baseline.neon next to the configuration)', false)
             ->addOption('debug', null, InputOption::VALUE_NONE, 'Keep and show the path of the generated code');
     }
 
@@ -44,8 +46,18 @@ final class AnalyseCommand extends Command
             $configFile = $cwd . '/' . ConfigurationLoader::DEFAULT_FILE_NAME;
         }
 
+        $baselineFile = $this->baselineFile($input->getOption('generate-baseline'), \is_string($configFile) ? \dirname((string) realpath($configFile)) : $cwd);
+        if ($baselineFile !== null && !str_ends_with($baselineFile, '.neon')) {
+            $io->error('The baseline file must have the extension .neon.');
+            return self::INVALID;
+        }
+
         $loader = new ConfigurationLoader();
-        $configuration = $loader->load(\is_string($configFile) ? $configFile : null, $cwd);
+        // PHPStan's loader leaves the baseline being generated out, so it does not hide what it is about to record
+        $configuration = $loader->load(\is_string($configFile) ? $configFile : null, $cwd, $baselineFile);
+        if ($baselineFile !== null) {
+            $configuration = $configuration->withoutUnmatchedIgnoredErrorsReport();
+        }
 
         $paths = $input->getArgument('paths');
         $paths = \is_array($paths) ? array_values(array_filter($paths, is_string(...))) : [];
@@ -57,6 +69,7 @@ final class AnalyseCommand extends Command
             $io->error('No paths given. Pass template paths as arguments or configure "paths" in fluidstan.neon.');
             return self::INVALID;
         }
+
 
         $analyser = new Analyser(
             $configuration,
@@ -71,6 +84,14 @@ final class AnalyseCommand extends Command
             }
         });
 
+        if ($baselineFile !== null) {
+            $count = (new BaselineWriter())->write($result->diagnostics, $baselineFile);
+            $io->success($count === 0
+                ? \sprintf('No errors were found during the analysis. An empty baseline was written to %s.', $this->relativePath($baselineFile, $cwd))
+                : \sprintf('Baseline with %d error%s written to %s.', $count, $count === 1 ? '' : 's', $this->relativePath($baselineFile, $cwd)));
+            return self::SUCCESS;
+        }
+
         $format = $input->getOption('error-format');
         if ($format === 'json') {
             $output->writeln((string) json_encode([
@@ -83,6 +104,10 @@ final class AnalyseCommand extends Command
                 ], $result->diagnostics->all()),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
             return \count($result->diagnostics) === 0 ? self::SUCCESS : self::FAILURE;
+        }
+
+        if ($configuration->strict === null) {
+            $io->note('Strict mode is off. Set "strict: true" in fluidstan.neon to also report what Fluid tolerates silently: cast argument values, paths through null, conditions that are always true or false, loose comparisons and rendered booleans. Set "strict: false" to keep it off and hide this note.');
         }
 
         foreach ($result->diagnostics->byFile() as $file => $diagnostics) {
@@ -127,6 +152,23 @@ final class AnalyseCommand extends Command
             $result->templateCount === 1 ? '' : 's',
         ));
         return self::FAILURE;
+    }
+
+    /**
+     * The absolute path of the baseline to write, or null when none is requested: the option is
+     * absent (false), given without a value (null) or given with a path.
+     */
+    private function baselineFile(mixed $option, string $configDirectory): ?string
+    {
+        if ($option === false) {
+            return null;
+        }
+
+        $path = (new ConfigurationLoader())->resolvePath(\is_string($option) && $option !== '' ? $option : 'fluidstan-baseline.neon', $configDirectory);
+
+        // The file may not exist yet; the directory must, for PHPStan's loader to recognise the include
+        $directory = realpath(\dirname($path));
+        return ($directory === false ? \dirname($path) : $directory) . '/' . basename($path);
     }
 
     private function locatePhpStan(): ?string

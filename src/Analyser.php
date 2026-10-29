@@ -8,6 +8,7 @@ use FluidStan\Configuration\Configuration;
 use FluidStan\Detection\AssignmentDetector;
 use FluidStan\Detection\ViewHelperClasses;
 use FluidStan\Diagnostics\DiagnosticCollection;
+use FluidStan\Diagnostics\IgnoredErrors;
 use FluidStan\Fluid\FluidEnvironment;
 use FluidStan\Fluid\TemplateFinder;
 use FluidStan\Runner\GeneratedConfigWriter;
@@ -83,6 +84,10 @@ final class Analyser
             $result = (new PhpStanRunner($binary))->run($configFile);
             $diagnostics->merge((new ResultMapper())->map($result, $this->generatedFiles));
         }
+
+        // Only single files given: an ignoreErrors entry for another template matching nothing says nothing
+        $onlyFiles = array_filter($this->configuration->paths, static fn(string $path): bool => !is_file($path)) === [];
+        $diagnostics = (new IgnoredErrors($this->configuration))->apply($diagnostics, $files, $onlyFiles);
 
         return new AnalysisResult($diagnostics, \count($files), $generatedDir);
     }
