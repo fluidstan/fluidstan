@@ -6,6 +6,7 @@ namespace FluidStan\Console;
 
 use FluidStan\Analyser;
 use FluidStan\Configuration\ConfigurationLoader;
+use FluidStan\Diagnostics\BaselineException;
 use FluidStan\Diagnostics\BaselineWriter;
 use FluidStan\Diagnostics\Diagnostic;
 use Symfony\Component\Console\Command\Command;
@@ -85,7 +86,13 @@ final class AnalyseCommand extends Command
         });
 
         if ($baselineFile !== null) {
-            $count = (new BaselineWriter())->write($result->diagnostics, $baselineFile);
+            try {
+                $count = (new BaselineWriter())->write($result->diagnostics, $baselineFile);
+            } catch (BaselineException $e) {
+                $io->error([$e->getMessage(), ...array_map(static fn(Diagnostic $d): string => OutputFormatter::escape($d->message), $e->diagnostics)]);
+                return self::FAILURE;
+            }
+
             $io->success($count === 0
                 ? \sprintf('No errors were found during the analysis. An empty baseline was written to %s.', $this->relativePath($baselineFile, $cwd))
                 : \sprintf('Baseline with %d error%s written to %s.', $count, $count === 1 ? '' : 's', $this->relativePath($baselineFile, $cwd)));
