@@ -9,8 +9,9 @@
   `fluidstan.neon` includes it through `includes`. `ignoreErrors` takes what PHPStan takes, a pattern or
   a map with `message` and/or `identifier`, `path` or `paths`, `count` and `reportUnmatched`, and the
   matching is PHPStan's own: counts are checked and an entry that matches nothing is reported unless
-  `reportUnmatchedIgnoredErrors: false` is set. `fluidstan.neon` is read by PHPStan's configuration
-  loader and validated against a schema; an unknown or mistyped parameter is an error now. README
+  `reportUnmatchedIgnoredErrors: false` is set. `fluidstan.neon` is read by Nette's configuration
+  loader, extended as PHPStan extends it, and validated against a schema; an unknown or mistyped
+  parameter is an error now. README
   "Baseline and ignored errors".
 - **`strict` is undecided by default.** Without the setting the analysis runs as before and the
   command points out that `strict: true` reports more and `strict: false` ends the note.

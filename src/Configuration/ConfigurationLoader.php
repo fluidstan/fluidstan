@@ -9,8 +9,6 @@ use Nette\Schema\Expect;
 use Nette\Schema\Processor;
 use Nette\Schema\Schema;
 use Nette\Schema\ValidationException;
-use PHPStan\DependencyInjection\LoaderFactory;
-use PHPStan\File\FileHelper;
 
 /**
  * @phpstan-import-type IgnoreError from Configuration
@@ -18,7 +16,7 @@ use PHPStan\File\FileHelper;
  *
  * Loads fluidstan.neon. Relative paths are resolved against the directory of the config file,
  * or against the working directory when no config file is used. A file may include others, a
- * baseline for instance; PHPStan's own configuration loader reads them.
+ * baseline for instance; ConfigFileLoader reads them as PHPStan reads its own.
  */
 final class ConfigurationLoader
 {
@@ -44,30 +42,22 @@ final class ConfigurationLoader
             // a relative one would turn "../" entries into siblings of the configuration directory
             $configFile = (string) realpath($configFile);
             $rootDir = \dirname($configFile);
-            $parameters = $this->decode($configFile, $rootDir, $workingDirectory, $generateBaselineFile);
+            $parameters = $this->decode($configFile, $generateBaselineFile);
         }
 
         return $this->fromParameters($parameters, $rootDir);
     }
 
     /**
-     * The configuration file with its includes, read by PHPStan's own loader: includes are merged
-     * with lists concatenated and the including file winning otherwise, the paths of ignoreErrors
-     * entries are made absolute against the file that defines them, and the baseline being generated
-     * is left out even before it exists. Other relative paths stay as written and are resolved
-     * against the main configuration file's directory.
+     * The configuration file with its includes, see ConfigFileLoader. Relative paths other than those
+     * of ignoreErrors entries stay as written and are resolved against the main file's directory.
      *
      * @return array<string, mixed>
      */
-    private function decode(string $configFile, string $rootDir, string $workingDirectory, ?string $generateBaselineFile): array
+    private function decode(string $configFile, ?string $generateBaselineFile): array
     {
-        $factory = new LoaderFactory(new FileHelper($rootDir), $rootDir, $workingDirectory, $generateBaselineFile, [
-            '[parameters][ignoreErrors][][path]',
-            '[parameters][ignoreErrors][][paths][]',
-        ]);
-
         try {
-            $decoded = $factory->createLoader()->load($configFile);
+            $decoded = (new ConfigFileLoader($generateBaselineFile))->load($configFile);
         } catch (\Throwable $throwable) {
             throw new ConfigurationException(\sprintf('Configuration file "%s" could not be loaded: %s', $configFile, $throwable->getMessage()), 0, $throwable);
         }

@@ -59,6 +59,5 @@ parameters:
                 - phpstanApi.constructor
                 - phpstanApi.method
             paths:
-                - src/Configuration/ConfigurationLoader.php
                 - src/Diagnostics/IgnoredErrors.php
                 - src/Diagnostics/BaselineWriter.php

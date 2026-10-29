@@ -113,8 +113,8 @@ checked member by member, as Fluid does. Strict mode reports the casts.
 
 PHPStan's rule level is not configurable: FluidStan's checks implement Fluid's semantics and run
 regardless of the level, and the generated code contains none of the constructs the levels add checks for.
-The file is read by PHPStan's own configuration loader and validated against a schema, so `includes`
-work as in PHPStan and an unknown or mistyped parameter is an error.
+The file is read by Nette's configuration loader, extended the way PHPStan extends it, and validated
+against a schema, so `includes` work as in PHPStan and an unknown or mistyped parameter is an error.
 
 TYPO3 projects use the adapter, which boots TYPO3 without a database, registers the namespaces from
 `$GLOBALS['TYPO3_CONF_VARS']['SYS']['fluid']['namespaces']` and resolves `EXT:` paths:

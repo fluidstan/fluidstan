@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace FluidStan\Tests\Unit;
 
+use Composer\InstalledVersions;
 use FluidStan\Configuration\ConfigurationException;
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Tests\Fixtures\Components\ComponentCollection;
 use FluidStan\Tests\Fixtures\Documented\DocumentedCollection;
 use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigurationLoaderTest extends TestCase
@@ -164,6 +166,22 @@ final class ConfigurationLoaderTest extends TestCase
         }
 
         $this->assertSame([['message' => '#x#', 'path' => $this->tmpDir . '/Templates/A.html']], $configuration->ignoreErrors);
+    }
+
+    /**
+     * Loading the configuration must not touch the PHPStan phar: its autoloader registers PHPStan's
+     * own Composer data, and TYPO3 13, booted afterwards, fails on the packages it then sees.
+     */
+    #[RunInSeparateProcess]
+    public function testLoadingLeavesComposersInstalledPackagesAlone(): void
+    {
+        file_put_contents($this->tmpDir . '/fluidstan.neon', "includes: [fluidstan-baseline.neon]\nparameters:\n    strict: true\n");
+        file_put_contents($this->tmpDir . '/fluidstan-baseline.neon', "parameters:\n    ignoreErrors: ['#x#']\n");
+        $before = \count(InstalledVersions::getAllRawData());
+
+        (new ConfigurationLoader())->load($this->tmpDir . '/fluidstan.neon', $this->tmpDir, $this->tmpDir . '/other-baseline.neon');
+
+        $this->assertCount($before, InstalledVersions::getAllRawData());
     }
 
     public function testAMissingIncludeIsAnError(): void
