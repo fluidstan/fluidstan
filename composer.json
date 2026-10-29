@@ -23,6 +23,7 @@
         "ext-ctype": "*",
         "composer-runtime-api": "^2.2",
         "nette/neon": "^3.4",
+        "nette/schema": "^1.3",
         "nikic/php-parser": "^5.0",
         "phpstan/phpstan": "^2.1.30",
         "psr/container": "^1.0 || ^2.0",

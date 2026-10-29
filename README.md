@@ -62,7 +62,7 @@ validation; on Fluid 4, whose runtime is lenient, they report what would fail af
 - Layouts, partials and sections analysed with the types of their call sites (sections are currently
   analysed with `mixed` variables)
 - Type inference from `assign()` / `assignMultiple()` calls in PHP code
-- Baseline file, result cache, more output formats
+- Result cache, more output formats
 - Upstream proposal: positions on Fluid syntax tree nodes
 
 ## Installation
@@ -79,12 +79,15 @@ composer require --dev fluidstan/typo3
 vendor/bin/fluidstan                          # uses ./fluidstan.neon
 vendor/bin/fluidstan path/to/Components       # explicit paths
 vendor/bin/fluidstan --error-format=json
+vendor/bin/fluidstan --generate-baseline      # writes the current errors to fluidstan-baseline.neon
 vendor/bin/fluidstan --debug                  # prints the directory of the generated PHP code
 ```
 
 `fluidstan.neon`:
 
 ```neon
+includes:
+    - fluidstan-baseline.neon  # optional, see "Baseline and ignored errors"
 parameters:
     paths:
         - packages/my_site/Resources/Private/Components
@@ -96,7 +99,8 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
     tmpDir: var/cache/fluidstan
-    strict: false              # also report what Fluid tolerates silently, see "Strict mode"
+    strict: true               # also report what Fluid tolerates silently, see "Strict mode"
+    ignoreErrors: []           # as in PHPStan, see "Baseline and ignored errors"
     phpstan:
         includes: []           # extra PHPStan config files for the generated code
         parameters: {}         # extra PHPStan parameters
@@ -109,6 +113,8 @@ checked member by member, as Fluid does. Strict mode reports the casts.
 
 PHPStan's rule level is not configurable: FluidStan's checks implement Fluid's semantics and run
 regardless of the level, and the generated code contains none of the constructs the levels add checks for.
+The file is read by PHPStan's own configuration loader and validated against a schema, so `includes`
+work as in PHPStan and an unknown or mistyped parameter is an error.
 
 TYPO3 projects use the adapter, which boots TYPO3 without a database, registers the namespaces from
 `$GLOBALS['TYPO3_CONF_VARS']['SYS']['fluid']['namespaces']` and resolves `EXT:` paths:
@@ -198,7 +204,9 @@ read before the first call is still reported.
 ## Strict mode
 
 Fluid tolerates a lot at runtime without a word. The default checks report what Fluid rejects or what
-cannot work; `strict: true` adds what Fluid does silently and what is probably not meant:
+cannot work; `strict: true` adds what Fluid does silently and what is probably not meant. Until the
+setting is in the configuration the analysis runs without it and says so after the results; `strict:
+false` keeps it off and ends the note.
 
 | Identifier | Reported |
 | --- | --- |
@@ -207,6 +215,53 @@ cannot work; `strict: true` adds what Fluid does silently and what is probably n
 | `if.alwaysTrue`, `if.alwaysFalse`, `booleanAnd.*`, `booleanOr.*`, `booleanNot.*`, `ternary.*` | A condition the types decide, such as `<f:if condition="{item}">` on an object that cannot be null or a bare `'false'`; reported by PHPStan's own rules on the generated code. A string stays open because `"false"` and `"0"` are false, and so does a `Countable`, which may be empty. |
 | `fluidstan.comparison.loose` | A comparison of scalars of different kinds, such as `{count} == '5'` or `{flag} == 1`: Fluid compares with PHP's loose operators, so the outcome depends on type juggling. `===` and `!==` are never reported; a `Countable` compares as a bool. |
 | `fluidstan.output.bool` | A bool rendered into the output, which prints `1` or nothing. |
+
+## Baseline and ignored errors
+
+```bash
+vendor/bin/fluidstan --generate-baseline                      # fluidstan-baseline.neon next to the configuration
+vendor/bin/fluidstan --generate-baseline=build/baseline.neon
+```
+
+The baseline records every current error as an `ignoreErrors` entry, in PHPStan's format with the
+message as a pattern, the identifier, the count and the template path relative to the baseline file.
+Include it from `fluidstan.neon` and only new errors are reported; regenerate it to take the current
+state as the new reference, the entries of the file being written do not hide anything while it is
+generated.
+
+`ignoreErrors` takes what PHPStan takes, a pattern or a map with `message` and/or `identifier`, `path`
+or `paths` relative to the file that defines the entry, `count` and `reportUnmatched`:
+
+```neon
+parameters:
+    ignoreErrors:
+        # a pattern, anywhere
+        - '#^Variable "legacy" is not defined#'
+        # an identifier in some templates
+        -
+            identifier: fluidstan.output.bool
+            paths:
+                - Components/Atom/Toggle/*.html
+        # exactly this many occurrences in one template; a fourth one, or only two, is reported
+        -
+            message: '#^Cannot access "length" on int\.$#'
+            path: Components/Molecule/Card/Card.html
+            count: 3
+        # an entry that may match nothing without being reported
+        -
+            identifier: fluidstan.property.nullable
+            path: Templates/Legacy.html
+            reportUnmatched: false
+    # or for every entry at once
+    reportUnmatchedIgnoredErrors: false
+```
+
+The matching, the counting and the report of an entry that no longer matches anything are PHPStan's
+own code, so they behave as in PHPStan: with a `count`, that many occurrences are ignored and a
+differing number is reported as `ignore.count`; an entry that matches nothing is reported as
+`ignore.unmatched` unless its `reportUnmatched: false` or the global `reportUnmatchedIgnoredErrors:
+false` says otherwise; and nothing is reported about unmatched entries when single files are analysed
+rather than directories.
 
 ## Conditions
 

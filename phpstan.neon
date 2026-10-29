@@ -52,3 +52,13 @@ parameters:
         -
             identifier: property.uninitialized
             path: src/PhpStan/ConditionTypeSpecifyingExtension.php
+        # ignoreErrors and the baseline reuse PHPStan's own matching and path helpers on purpose, so that
+        # the semantics are PHPStan's; a change there shows up in the tests
+        -
+            identifiers:
+                - phpstanApi.constructor
+                - phpstanApi.method
+            paths:
+                - src/Configuration/ConfigurationLoader.php
+                - src/Diagnostics/IgnoredErrors.php
+                - src/Diagnostics/BaselineWriter.php

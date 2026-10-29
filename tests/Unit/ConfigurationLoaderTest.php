@@ -8,10 +8,14 @@ use FluidStan\Configuration\ConfigurationException;
 use FluidStan\Configuration\ConfigurationLoader;
 use FluidStan\Tests\Fixtures\Components\ComponentCollection;
 use FluidStan\Tests\Fixtures\Documented\DocumentedCollection;
+use FluidStan\Tests\TemporaryDirectory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigurationLoaderTest extends TestCase
 {
+    use TemporaryDirectory;
+
     public function testDefaults(): void
     {
         $configuration = (new ConfigurationLoader())->fromParameters([], '/project');
@@ -25,7 +29,9 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame([], $configuration->phpstanIncludes);
         $this->assertSame([], $configuration->phpstanParameters);
         $this->assertSame('/project/.cache/fluidstan', $configuration->tmpDir);
-        $this->assertFalse($configuration->strict);
+        $this->assertNull($configuration->strict, 'undecided until the project says so');
+        $this->assertSame([], $configuration->ignoreErrors);
+        $this->assertTrue($configuration->reportUnmatchedIgnoredErrors);
         $this->assertNull($configuration->environment);
     }
 
@@ -56,10 +62,15 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertTrue($configuration->strict);
     }
 
+    public function testStrictMayBeFalse(): void
+    {
+        $this->assertFalse((new ConfigurationLoader())->fromParameters(['strict' => false], '/project')->strict);
+    }
+
     public function testStrictMustBeABool(): void
     {
         $this->expectException(ConfigurationException::class);
-        $this->expectExceptionMessage('"strict" must be true or false.');
+        $this->expectExceptionMessage("The item 'strict' expects to be null or bool, 'yes' given.");
         (new ConfigurationLoader())->fromParameters(['strict' => 'yes'], '/project');
     }
 
@@ -76,7 +87,7 @@ final class ConfigurationLoaderTest extends TestCase
     public function testViewHelperAssignmentTypesMustBeStrings(): void
     {
         $this->expectException(ConfigurationException::class);
-        $this->expectExceptionMessage('"viewHelperAssignments.My\\LoadViewHelper.item" must be a PHPDoc type, or a map with "type" and a "scope" of "template", "children" or "removed".');
+        $this->expectExceptionMessage("expects to be 'template'|'children'|'removed', 'everywhere' given.");
         (new ConfigurationLoader())->fromParameters(['viewHelperAssignments' => ['My\\LoadViewHelper' => ['item' => ['type' => 'My\\Item', 'scope' => 'everywhere']]]], '/project');
     }
 
@@ -109,5 +120,110 @@ final class ConfigurationLoaderTest extends TestCase
         $this->assertSame('E', $changed->environment);
         $this->assertTrue($changed->strict);
         $this->assertSame($configuration->namespaces, $changed->namespaces);
+    }
+
+    public function testIncludesMergeParametersAndConcatenateIgnoreErrors(): void
+    {
+        file_put_contents($this->tmpDir . '/fluidstan.neon', "includes:\n    - fluidstan-baseline.neon\n    - sub/more.neon\nparameters:\n    suffixes: [.html]\n    strict: true\n    ignoreErrors:\n        - '#own#'\n");
+        file_put_contents($this->tmpDir . '/fluidstan-baseline.neon', "parameters:\n    suffixes: [.fluid]\n    ignoreErrors:\n        -\n            message: '#^Variable \"x\" is not defined\\.$#'\n            identifier: variable.undefined\n            count: 2\n            path: Templates/A.html\n");
+        mkdir($this->tmpDir . '/sub');
+        file_put_contents($this->tmpDir . '/sub/more.neon', "parameters:\n    reportUnmatchedIgnoredErrors: false\n    ignoreErrors:\n        -\n            identifier: fluidstan.output.bool\n            paths: [a/*.html, /abs/b.html]\n");
+
+        $configuration = (new ConfigurationLoader())->load($this->tmpDir . '/fluidstan.neon', '/elsewhere');
+
+        $this->assertSame(['.fluid', '.html'], $configuration->suffixes, 'lists add up, as in PHPStan');
+        $this->assertTrue($configuration->strict);
+        $this->assertFalse($configuration->reportUnmatchedIgnoredErrors, 'an include may set what the main file leaves alone');
+        $this->assertSame([
+            // paths are relative to the file that defines them
+            ['message' => '#^Variable "x" is not defined\\.$#', 'identifier' => 'variable.undefined', 'count' => 2, 'path' => $this->tmpDir . '/Templates/A.html'],
+            ['identifier' => 'fluidstan.output.bool', 'paths' => [$this->tmpDir . '/sub/a/*.html', '/abs/b.html']],
+            '#own#',
+        ], $configuration->ignoreErrors);
+
+        // Generating the baseline: its include is left out, even one that does not exist yet
+        $forBaseline = (new ConfigurationLoader())->load($this->tmpDir . '/fluidstan.neon', '/elsewhere', $this->tmpDir . '/fluidstan-baseline.neon');
+        $this->assertSame([['identifier' => 'fluidstan.output.bool', 'paths' => [$this->tmpDir . '/sub/a/*.html', '/abs/b.html']], '#own#'], $forBaseline->ignoreErrors);
+        unlink($this->tmpDir . '/fluidstan-baseline.neon');
+        $this->assertCount(2, (new ConfigurationLoader())->load($this->tmpDir . '/fluidstan.neon', '/elsewhere', $this->tmpDir . '/fluidstan-baseline.neon')->ignoreErrors);
+        $this->assertFalse($forBaseline->withoutUnmatchedIgnoredErrorsReport()->reportUnmatchedIgnoredErrors);
+    }
+
+    public function testIncludedPathsResolveFromARelativeConfigurationPathToo(): void
+    {
+        mkdir($this->tmpDir . '/Build');
+        file_put_contents($this->tmpDir . '/Build/fluidstan.neon', "includes: [fluidstan-baseline.neon]\nparameters: {}\n");
+        file_put_contents($this->tmpDir . '/Build/fluidstan-baseline.neon', "parameters:\n    ignoreErrors:\n        -\n            message: '#x#'\n            path: ../Templates/A.html\n");
+
+        $cwd = (string) getcwd();
+        chdir($this->tmpDir);
+        try {
+            $configuration = (new ConfigurationLoader())->load('Build/fluidstan.neon', $this->tmpDir);
+        } finally {
+            chdir($cwd);
+        }
+
+        $this->assertSame([['message' => '#x#', 'path' => $this->tmpDir . '/Templates/A.html']], $configuration->ignoreErrors);
+    }
+
+    public function testAMissingIncludeIsAnError(): void
+    {
+        file_put_contents($this->tmpDir . '/a.neon', "includes: [missing.neon]\nparameters: {}\n");
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('could not be loaded');
+        (new ConfigurationLoader())->load($this->tmpDir . '/a.neon', $this->tmpDir);
+    }
+
+    public function testAnIncludeCycleIsAnError(): void
+    {
+        file_put_contents($this->tmpDir . '/a.neon', "includes: [b.neon]\nparameters: {}\n");
+        file_put_contents($this->tmpDir . '/b.neon', "includes: [a.neon]\nparameters: {}\n");
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('could not be loaded');
+        (new ConfigurationLoader())->load($this->tmpDir . '/a.neon', $this->tmpDir);
+    }
+
+    /**
+     * @return iterable<string, array{mixed, string}>
+     */
+    public static function invalidIgnoreErrors(): iterable
+    {
+        // Nette's messages, the ones PHPStan users know; the item path separator is left out of the assertions
+        yield 'not a list' => [['message' => '#x#'], "The item 'ignoreErrors' expects to be list, array given."];
+        yield 'invalid pattern' => [['#[unclosed#'], "Failed assertion 'a regular expression with delimiters'"];
+        yield 'neither message nor identifier' => [[['path' => 'a.html']], "Failed assertion 'a message, rawMessage or identifier'"];
+        yield 'path and paths' => [[['message' => '#x#', 'path' => 'a.html', 'paths' => ['b.html']]], "Failed assertion 'either path or paths'"];
+        yield 'zero count' => [[['message' => '#x#', 'count' => 0]], "count' expects to be in range 1.., 0 given."];
+        yield 'path not a string' => [[['message' => '#x#', 'path' => 1]], "path' expects to be string, 1 given."];
+        yield 'unknown option' => [[['message' => '#x#', 'file' => 'a.html']], "Unexpected item 'ignoreErrors"];
+        yield 'unknown parameter' => [[], "Unexpected item 'nope'"];
+    }
+
+    #[DataProvider('invalidIgnoreErrors')]
+    public function testInvalidIgnoreErrorsAreRejected(mixed $entries, string $message): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage($message);
+        (new ConfigurationLoader())->fromParameters($entries === [] ? ['nope' => 1] : ['ignoreErrors' => $entries], '/project');
+    }
+
+    public function testAcceptsEveryShapePhpStanAccepts(): void
+    {
+        $entries = [
+            ['messages' => ['#a#', '#b#'], 'path' => 'A.html'],
+            ['rawMessage' => 'Exact text', 'paths' => ['*.html']],
+            ['identifiers' => ['x.y', 'z'], 'reportUnmatched' => false],
+        ];
+        $this->assertSame([
+            ['messages' => ['#a#', '#b#'], 'path' => '/project/A.html'],
+            ['rawMessage' => 'Exact text', 'paths' => ['/project/*.html']],
+            ['identifiers' => ['x.y', 'z'], 'reportUnmatched' => false],
+        ], (new ConfigurationLoader())->fromParameters(['ignoreErrors' => $entries], '/project')->ignoreErrors);
+    }
+
+    public function testIgnoreErrorsFromParametersAreRelativeToTheRootDir(): void
+    {
+        $configuration = (new ConfigurationLoader())->fromParameters(['ignoreErrors' => [['identifier' => 'x', 'path' => 'Templates/A.html']]], '/project');
+        $this->assertSame([['identifier' => 'x', 'path' => '/project/Templates/A.html']], $configuration->ignoreErrors);
     }
 }
