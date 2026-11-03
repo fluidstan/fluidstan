@@ -20,7 +20,7 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer lint
 
   test:
@@ -43,7 +43,7 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: composer require --no-update "typo3fluid/fluid:${{ matrix.fluid }}"
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
         with:
           dependency-versions: ${{ matrix.dependencies }}
       - run: composer test
@@ -59,7 +59,7 @@ jobs:
         with:
           php-version: '8.4'
           coverage: pcov
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       # Pull requests: only mutants on changed lines, which takes seconds instead of a full run
       - if: github.event_name == 'pull_request'
         run: vendor/bin/infection --threads=max --git-diff-lines --git-diff-base=origin/${{ github.base_ref }} --min-msi=70 --min-covered-msi=70 --logger-github
