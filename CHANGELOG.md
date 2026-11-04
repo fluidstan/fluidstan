@@ -1,14 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.3.1
+
+FluidStan works with PHPStan 2.3.5 and later again.
 
 ### Fixed
 
 - **PHPStan 2.3.5 and later.** `ignoreErrors` and the baseline no longer build PHPStan's internal
   `IgnoredErrorHelper` and `ParentDirectoryRelativePathHelper`, whose constructors are not covered by
   PHPStan's backward compatibility promise; 2.3.5 changed one and every run with `ignoreErrors` failed.
-  FluidStan matches the entries itself. Entries keep PHPStan's shape and meaning; the messages about
-  unmatched entries and counts are worded slightly differently.
+  FluidStan matches the entries itself. Entries keep PHPStan's shape and meaning, with two differences:
+  entries for the same error, in the baseline and the main configuration for instance, are no longer
+  merged into one, each keeps its own count; and the messages about unmatched entries and counts are
+  worded slightly differently.
 
 ## 0.3.0
 
