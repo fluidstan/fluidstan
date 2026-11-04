@@ -13,8 +13,8 @@ use FluidStan\Tests\TemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The matching is PHPStan's; what is checked here is the wiring: paths, counts, identifiers, the
- * report of entries that match nothing, and that diagnostics without a template are left alone.
+ * The matching of PHPStan-shaped entries: paths, messages, identifiers, counts, the report of
+ * entries that match nothing, and that diagnostics without a template are left alone.
  */
 final class IgnoredErrorsTest extends TestCase
 {
@@ -103,10 +103,78 @@ final class IgnoredErrorsTest extends TestCase
 
         $fewer = (new IgnoredErrors($configuration(4)))->apply($three, [$a], false);
         $this->assertSame(['ignore.count'], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $fewer->all()), 'fewer occurrences than counted: the mismatch is reported, all three are ignored');
-        $this->assertStringContainsString('expected to occur 4 times, but occurred only 3 times', $fewer->all()[0]->message ?? '');
+        $this->assertStringContainsString('expected to occur 4 times, but occurred 3 times', $fewer->all()[0]->message ?? '');
 
         $more = (new IgnoredErrors($configuration(2)))->apply($three, [$a], false);
         $this->assertSame(['ignore.count', 'x'], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $more->all()), 'more occurrences than counted: the mismatch and the extra one are reported');
+    }
+
+    public function testPathsAreFilesDirectoriesOrPatterns(): void
+    {
+        mkdir($this->tmpDir . '/Partials/Deep', 0o777, true);
+        $a = $this->tmpDir . '/A.html';
+        $deep = $this->tmpDir . '/Partials/Deep/P.html';
+        $other = $this->tmpDir . '/Other.fluid';
+        touch($a);
+        touch($deep);
+        touch($other);
+
+        $ignore = fn(array $entry, string $file): int => \count((new IgnoredErrors((new ConfigurationLoader())->fromParameters(['ignoreErrors' => [$entry], 'reportUnmatchedIgnoredErrors' => false], $this->tmpDir)))->apply($this->single($file, 'Message', 'x'), [$file], false));
+
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'path' => 'A.html'], $a), 'a file');
+        $this->assertSame(1, $ignore(['identifier' => 'x', 'path' => 'A.html'], $other), 'another file');
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'path' => 'Partials'], $deep), 'a directory covers everything below it');
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'path' => 'Partials/'], $deep), 'with a trailing slash too');
+        $this->assertSame(1, $ignore(['identifier' => 'x', 'path' => 'Partials'], $a), 'but nothing beside it');
+        $this->assertSame(1, $ignore(['identifier' => 'x', 'path' => 'Part'], $deep), 'a directory is no string prefix');
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'path' => '*.fluid'], $other), 'a pattern, against the absolute path');
+        $this->assertSame(1, $ignore(['identifier' => 'x', 'path' => '*.fluid'], $a));
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'path' => 'Partials/../A.html'], $a), 'dot segments are resolved');
+        $this->assertSame(1, $ignore(['identifier' => 'x', 'path' => 'Missing.html'], $a), 'a path that does not exist matches nothing');
+        $this->assertSame(0, $ignore(['identifier' => 'x', 'paths' => ['Missing.html', 'A.html']], $a), 'any of the paths');
+        $this->assertSame(1, $ignore(['identifier' => 'y', 'path' => 'A.html'], $a), 'the identifier must match too');
+    }
+
+    public function testMessagesRawMessagesAndTheListForms(): void
+    {
+        $ignore = fn(array|string $entry): int => \count((new IgnoredErrors((new ConfigurationLoader())->fromParameters(['ignoreErrors' => [$entry], 'reportUnmatchedIgnoredErrors' => false], $this->tmpDir)))->apply($this->single('/t.html', 'Variable "x" is not defined.', 'variable.undefined'), ['/t.html'], false));
+
+        $this->assertSame(0, $ignore('#not defined#'), 'a plain pattern');
+        $this->assertSame(1, $ignore('#^not defined#'));
+        $this->assertSame(0, $ignore(['rawMessage' => 'Variable "x" is not defined.']), 'a raw message is compared as it is');
+        $this->assertSame(1, $ignore(['rawMessage' => 'Variable "x" is not defined']));
+        $this->assertSame(0, $ignore(['messages' => ['#nope#', '#"x"#']]), 'any of the messages');
+        $this->assertSame(0, $ignore(['rawMessages' => ['nope', 'Variable "x" is not defined.']]));
+        $this->assertSame(0, $ignore(['identifiers' => ['nope', 'variable.undefined']]));
+        $this->assertSame(1, $ignore(['messages' => ['#"x"#'], 'identifiers' => ['nope']]), 'combined lists: both must match');
+        $this->assertSame(0, $ignore(['messages' => ['#"x"#'], 'identifiers' => ['nope', 'variable.undefined']]));
+    }
+
+    public function testUnmatchedPathsAndPatternsAreReported(): void
+    {
+        $a = $this->tmpDir . '/A.html';
+        touch($a);
+        $configuration = (new ConfigurationLoader())->fromParameters(['ignoreErrors' => [
+            ['identifier' => 'x', 'paths' => ['B.html', 'C.html']],
+            '#never#',
+            ['rawMessage' => 'Never', 'identifier' => 'y'],
+        ]], $this->tmpDir);
+
+        $remaining = (new IgnoredErrors($configuration))->apply($this->single($a, 'Message', 'x'), [$a], false);
+        $this->assertSame([
+            'Ignored error x in ' . $this->tmpDir . '/B.html, ' . $this->tmpDir . '/C.html was not matched in reported errors.',
+            'Ignored error #never# was not matched in reported errors.',
+            'Ignored error "Never", y was not matched in reported errors.',
+            'Message',
+        ], array_map(static fn(Diagnostic $d): string => $d->message, $remaining->all()));
+        $this->assertSame(['ignore.unmatched', 'ignore.unmatched', 'ignore.unmatched', 'x'], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $remaining->all()));
+    }
+
+    private function single(string $file, string $message, string $identifier): DiagnosticCollection
+    {
+        $diagnostics = new DiagnosticCollection();
+        $diagnostics->add(new Diagnostic($file, 1, $message, $identifier));
+        return $diagnostics;
     }
 
     public function testNothingConfiguredChangesNothing(): void

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **PHPStan 2.3.5 and later.** `ignoreErrors` and the baseline no longer build PHPStan's internal
+  `IgnoredErrorHelper` and `ParentDirectoryRelativePathHelper`, whose constructors are not covered by
+  PHPStan's backward compatibility promise; 2.3.5 changed one and every run with `ignoreErrors` failed.
+  FluidStan matches the entries itself. Entries keep PHPStan's shape and meaning; the messages about
+  unmatched entries and counts are worded slightly differently.
+
 ## 0.3.0
 
 ViewHelpers that assign template variables are detected, an opt-in strict mode reports what Fluid
