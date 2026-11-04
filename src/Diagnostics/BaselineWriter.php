@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FluidStan\Diagnostics;
 
 use Nette\Neon\Neon;
-use PHPStan\File\ParentDirectoryRelativePathHelper;
 
 /**
  * Writes the current diagnostics as a baseline: a configuration file with an ignoreErrors entry per
@@ -26,7 +25,6 @@ final class BaselineWriter
         }
 
         // Paths relative to the baseline, with ".." where needed, as PHPStan writes its own baselines
-        $relative = new ParentDirectoryRelativePathHelper(\dirname($baselineFile));
         $entries = [];
         $total = 0;
         foreach ($diagnostics as $diagnostic) {
@@ -36,7 +34,7 @@ final class BaselineWriter
                 'message' => '#^' . preg_quote($diagnostic->message, '#') . '$#',
                 'identifier' => $diagnostic->identifier,
                 'count' => 0,
-                'path' => $relative->getRelativePath($diagnostic->file),
+                'path' => $this->relativePath($diagnostic->file, \dirname($baselineFile)),
             ];
             ++$entries[$key]['count'];
             ++$total;
@@ -56,5 +54,26 @@ final class BaselineWriter
         }
 
         return $total;
+    }
+
+    /**
+     * $file relative to $directory, with ".." for the levels up from it; a file without a common
+     * leading directory stays absolute.
+     */
+    private function relativePath(string $file, string $directory): string
+    {
+        $fileParts = explode('/', trim(str_replace('\\', '/', $file), '/'));
+        $directoryParts = explode('/', trim(str_replace('\\', '/', $directory), '/'));
+
+        $common = 0;
+        while (isset($fileParts[$common], $directoryParts[$common]) && $fileParts[$common] === $directoryParts[$common]) {
+            ++$common;
+        }
+
+        if ($common === 0) {
+            return $file;
+        }
+
+        return implode('/', [...array_fill(0, \count($directoryParts) - $common, '..'), ...\array_slice($fileParts, $common)]);
     }
 }

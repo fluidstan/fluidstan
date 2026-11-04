@@ -52,7 +52,7 @@ final class BaselineTest extends TestCase
         $configFile = $this->configFile(['includes' => ['fluidstan-baseline.neon'], 'parameters' => $parameters]);
         $stale = $this->analyse(['--configuration' => $configFile, '--no-phpstan' => true]);
         $this->assertSame(1, $stale['status']);
-        $this->assertStringContainsString('was not matched', $stale['output']);
+        // The identifier, not the message: the table wraps the message where the path length puts it
         $this->assertStringContainsString('ignore.unmatched', $stale['output']);
 
         $parameters['reportUnmatchedIgnoredErrors'] = false;
