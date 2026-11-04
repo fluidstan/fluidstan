@@ -63,7 +63,8 @@ final readonly class IgnoredErrors
             $match = $matches[$index] ?? null;
             $count = $match['count'] ?? 0;
             $expected = \is_array($entry) ? $entry['count'] ?? null : null;
-            $boundTo = \is_array($entry) && isset($entry['path']) ? realpath($entry['path']) : false;
+            // Bound to a template: a path that is a file, not a directory or a pattern
+            $boundTo = \is_array($entry) && isset($entry['path']) && is_file($entry['path']) ? realpath($entry['path']) : false;
             // After an internal error, entries that match nothing are no news
             $report = !$hasInternalErrors && ((\is_array($entry) ? $entry['reportUnmatched'] ?? null : null) ?? $this->configuration->reportUnmatchedIgnoredErrors);
 
@@ -86,13 +87,13 @@ final readonly class IgnoredErrors
             return preg_match($entry, $diagnostic->message) === 1;
         }
 
-        // Each criterion that is given must match, by one of its values
-        $anyOf = static fn(array $values, callable $test): bool => $values === [] || array_filter($values, $test) !== [];
+        // Each criterion that is given must match, by one of its values; an empty list matches nothing
+        $anyOf = fn(string $key, callable $test): bool => !isset($entry[$key]) && !isset($entry[$key . 's']) || array_filter($this->values($entry, $key), $test) !== [];
 
-        return $anyOf($this->values($entry, 'identifier'), static fn(string $identifier): bool => $identifier === $diagnostic->identifier)
-            && $anyOf($this->values($entry, 'message'), static fn(string $pattern): bool => preg_match($pattern, $diagnostic->message) === 1)
-            && $anyOf($this->values($entry, 'rawMessage'), static fn(string $message): bool => $message === $diagnostic->message)
-            && $anyOf($this->values($entry, 'path'), static fn(string $path): bool => self::matchesPath($path, $diagnostic->file));
+        return $anyOf('identifier', static fn(string $identifier): bool => $identifier === $diagnostic->identifier)
+            && $anyOf('message', static fn(string $pattern): bool => preg_match($pattern, $diagnostic->message) === 1)
+            && $anyOf('rawMessage', static fn(string $message): bool => $message === $diagnostic->message)
+            && $anyOf('path', static fn(string $path): bool => self::matchesPath($path, $diagnostic->file));
     }
 
     /**

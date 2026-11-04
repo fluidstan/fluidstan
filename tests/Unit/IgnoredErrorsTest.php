@@ -170,6 +170,29 @@ final class IgnoredErrorsTest extends TestCase
         $this->assertSame(['ignore.unmatched', 'ignore.unmatched', 'ignore.unmatched', 'x'], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $remaining->all()));
     }
 
+    public function testAnEmptyListMatchesNothing(): void
+    {
+        $diagnostics = $this->single('/t.html', 'Message', 'x');
+        foreach (['identifiers', 'messages', 'rawMessages', 'paths'] as $key) {
+            // next to a criterion that matches, which an empty list must not widen
+            $entry = $key === 'identifiers' ? ['message' => '#Message#', $key => []] : ['identifier' => 'x', $key => []];
+            $configuration = (new ConfigurationLoader())->fromParameters(['ignoreErrors' => [$entry], 'reportUnmatchedIgnoredErrors' => false], $this->tmpDir);
+            $this->assertCount(1, (new IgnoredErrors($configuration))->apply($diagnostics, ['/t.html'], false), $key . ': []');
+        }
+    }
+
+    public function testAnUnmatchedDirectoryEntryIsReportedForADirectoryRun(): void
+    {
+        mkdir($this->tmpDir . '/Partials');
+        $a = $this->tmpDir . '/Partials/A.html';
+        touch($a);
+        $configuration = (new ConfigurationLoader())->fromParameters(['ignoreErrors' => [['identifier' => 'never', 'path' => 'Partials']]], $this->tmpDir);
+
+        $remaining = (new IgnoredErrors($configuration))->apply($this->single($a, 'Kept', 'x'), [$a], false);
+        $this->assertSame(['ignore.unmatched', 'x'], array_map(static fn(Diagnostic $d): ?string => $d->identifier, $remaining->all()));
+        $this->assertSame('', $remaining->all()[0]->file ?? null, 'a directory is no template to report it on');
+    }
+
     private function single(string $file, string $message, string $identifier): DiagnosticCollection
     {
         $diagnostics = new DiagnosticCollection();
